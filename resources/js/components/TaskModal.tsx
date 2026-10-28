@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Task, Priority, Status } from '@/types/task';
+import { Task, Priority, Status, RecurrenceInterval, Subtask } from '@/types/task';
 import { Tag } from '@/types/tag';
 import {
   Dialog,
@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, MessageSquare, Trash2, Send } from 'lucide-react';
+import { Plus, X, MessageSquare, Trash2, Send, CheckSquare, Square, Repeat } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
@@ -40,13 +40,23 @@ interface TaskModalProps {
   activeBoardId?: number;
 }
 
-
-export default function TaskModal({ open, onClose, onSave, task, defaultStatus = 'todo', availableTags = [], activeBoardId }: TaskModalProps) {
+export default function TaskModal({
+  open,
+  onClose,
+  onSave,
+  task,
+  defaultStatus = 'todo',
+  availableTags = [],
+  activeBoardId,
+}: TaskModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [status, setStatus] = useState<Status>(defaultStatus);
   const [dueDate, setDueDate] = useState<string>('');
+  const [recurrenceInterval, setRecurrenceInterval] = useState<RecurrenceInterval>('none');
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3B82F6');
@@ -60,10 +70,12 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
   useEffect(() => {
     if (task) {
       setTitle(task.title);
-      setDescription(task.description);
+      setDescription(task.description || '');
       setPriority(task.priority);
       setStatus(task.status);
       setDueDate(task.due_date ? task.due_date.split('T')[0] : '');
+      setRecurrenceInterval(task.recurrence_interval || 'none');
+      setSubtasks(Array.isArray(task.subtasks) ? task.subtasks : []);
       setSelectedTags(task.tags || []);
     } else {
       setTitle('');
@@ -71,9 +83,12 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
       setPriority('medium');
       setStatus(defaultStatus);
       setDueDate('');
+      setRecurrenceInterval('none');
+      setSubtasks([]);
       setSelectedTags([]);
     }
-  }, [task, defaultStatus]);
+    setNewSubtaskTitle('');
+  }, [task, defaultStatus, open]);
 
   useEffect(() => {
     if (task?.id && open) {
@@ -82,13 +97,13 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
 
       Promise.all([
         axios.get(`/tasks/${task.id}/activities`),
-        axios.get(`/tasks/${task.id}/comments`)
+        axios.get(`/tasks/${task.id}/comments`),
       ])
         .then(([activitiesRes, commentsRes]) => {
           setActivities(activitiesRes.data);
           setComments(commentsRes.data);
         })
-        .catch(err => console.error('Failed to fetch data', err))
+        .catch((err) => console.error('Failed to fetch data', err))
         .finally(() => {
           setIsLoadingActivities(false);
           setIsLoadingComments(false);
@@ -96,26 +111,47 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
     }
   }, [task?.id, open]);
 
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim()) return;
+    const item: Subtask = {
+      id: `st-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      title: newSubtaskTitle.trim(),
+      completed: false,
+    };
+    setSubtasks([...subtasks, item]);
+    setNewSubtaskTitle('');
+  };
+
+  const handleToggleSubtask = (id: string) => {
+    setSubtasks(
+      subtasks.map((st) => (st.id === id ? { ...st, completed: !st.completed } : st))
+    );
+  };
+
+  const handleRemoveSubtask = (id: string) => {
+    setSubtasks(subtasks.filter((st) => st.id !== id));
+  };
+
   const handlePostComment = async () => {
     if (!newComment.trim() || !task?.id) return;
 
     try {
       const response = await axios.post(`/tasks/${task.id}/comments`, {
-        body: newComment
+        body: newComment,
       });
       setComments([response.data, ...comments]);
       setNewComment('');
     } catch (error) {
-      console.error("Failed to post comment", error);
+      console.error('Failed to post comment', error);
     }
   };
 
   const handleDeleteComment = async (commentId: number) => {
     try {
       await axios.delete(`/comments/${commentId}`);
-      setComments(comments.filter(c => c.id !== commentId));
+      setComments(comments.filter((c) => c.id !== commentId));
     } catch (error) {
-      console.error("Failed to delete comment", error);
+      console.error('Failed to delete comment', error);
     }
   };
 
@@ -126,10 +162,12 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
       id: task?.id,
       title: title.trim(),
       description: description.trim(),
+      subtasks,
       priority,
       status,
       due_date: dueDate || null,
-      tags: selectedTags
+      recurrence_interval: recurrenceInterval,
+      tags: selectedTags,
     });
 
     handleClose();
@@ -142,20 +180,17 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
       await axios.post('/tags', {
         board_id: activeBoardId,
         name: newTagName,
-        color: newTagColor
+        color: newTagColor,
       });
-
-      // Refresh page to get new tags - primitive but works for now. 
-      // Ideally we'd update availableTags via parent or context.
       window.location.reload();
     } catch (error) {
-      console.error("Failed to create tag", error);
+      console.error('Failed to create tag', error);
     }
   };
 
   const toggleTag = (tag: Tag) => {
-    if (selectedTags.find(t => t.id === tag.id)) {
-      setSelectedTags(selectedTags.filter(t => t.id !== tag.id));
+    if (selectedTags.find((t) => t.id === tag.id)) {
+      setSelectedTags(selectedTags.filter((t) => t.id !== tag.id));
     } else {
       setSelectedTags([...selectedTags, tag]);
     }
@@ -166,12 +201,14 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
     setDescription('');
     setPriority('medium');
     setStatus(defaultStatus);
+    setRecurrenceInterval('none');
+    setSubtasks([]);
     onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.2)]">
+      <DialogContent className="sm:max-w-[540px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.2)]">
         <DialogHeader>
           <DialogTitle className="text-2xl text-gray-800 dark:text-gray-100">
             {task ? 'Edit Task' : 'Add New Task'}
@@ -181,15 +218,19 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto max-h-[70vh]">
+        <div className="flex-1 overflow-y-auto max-h-[70vh] pr-1">
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-4 bg-gray-100 dark:bg-slate-800 p-1">
-              <TabsTrigger value="details" className="dark:data-[state=active]:bg-slate-700">Details</TabsTrigger>
+              <TabsTrigger value="details" className="dark:data-[state=active]:bg-slate-700">
+                Details
+              </TabsTrigger>
               <TabsTrigger value="comments" className="dark:data-[state=active]:bg-slate-700">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Comments
               </TabsTrigger>
-              <TabsTrigger value="activity" className="dark:data-[state=active]:bg-slate-700">Activity</TabsTrigger>
+              <TabsTrigger value="activity" className="dark:data-[state=active]:bg-slate-700">
+                Activity
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="details" className="space-y-4">
@@ -207,7 +248,10 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-gray-700 dark:text-gray-300 font-medium">
+                <Label
+                  htmlFor="description"
+                  className="text-gray-700 dark:text-gray-300 font-medium"
+                >
                   Description
                 </Label>
                 <Textarea
@@ -215,13 +259,16 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter task description"
-                  className="border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-blue-400 min-h-[100px] rounded-lg"
+                  className="border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-blue-400 min-h-[80px] rounded-lg"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="priority" className="text-gray-700 dark:text-gray-300 font-medium">
+                  <Label
+                    htmlFor="priority"
+                    className="text-gray-700 dark:text-gray-300 font-medium"
+                  >
                     Priority
                   </Label>
                   <Select value={priority} onValueChange={(value) => setPriority(value as Priority)}>
@@ -229,9 +276,21 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                      <SelectItem value="low" className="dark:text-gray-300 dark:focus:bg-slate-700">Low</SelectItem>
-                      <SelectItem value="medium" className="dark:text-gray-300 dark:focus:bg-slate-700">Medium</SelectItem>
-                      <SelectItem value="high" className="dark:text-gray-300 dark:focus:bg-slate-700">High</SelectItem>
+                      <SelectItem value="low" className="dark:text-gray-300 dark:focus:bg-slate-700">
+                        Low
+                      </SelectItem>
+                      <SelectItem
+                        value="medium"
+                        className="dark:text-gray-300 dark:focus:bg-slate-700"
+                      >
+                        Medium
+                      </SelectItem>
+                      <SelectItem
+                        value="high"
+                        className="dark:text-gray-300 dark:focus:bg-slate-700"
+                      >
+                        High
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -245,42 +304,187 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                      <SelectItem value="todo" className="dark:text-gray-300 dark:focus:bg-slate-700">To Do</SelectItem>
-                      <SelectItem value="in-progress" className="dark:text-gray-300 dark:focus:bg-slate-700">In Progress</SelectItem>
-                      <SelectItem value="in-review" className="dark:text-gray-300 dark:focus:bg-slate-700">In Review</SelectItem>
-                      <SelectItem value="done" className="dark:text-gray-300 dark:focus:bg-slate-700">Done</SelectItem>
+                      <SelectItem value="todo" className="dark:text-gray-300 dark:focus:bg-slate-700">
+                        To Do
+                      </SelectItem>
+                      <SelectItem
+                        value="in-progress"
+                        className="dark:text-gray-300 dark:focus:bg-slate-700"
+                      >
+                        In Progress
+                      </SelectItem>
+                      <SelectItem
+                        value="in-review"
+                        className="dark:text-gray-300 dark:focus:bg-slate-700"
+                      >
+                        In Review
+                      </SelectItem>
+                      <SelectItem value="done" className="dark:text-gray-300 dark:focus:bg-slate-700">
+                        Done
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {/* Due Date */}
+              {/* Due Date & Recurrence */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dueDate" className="text-gray-700 dark:text-gray-300 font-medium">
+                    Due Date
+                  </Label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-blue-400 rounded-lg"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-gray-700 dark:text-gray-300 font-medium flex items-center gap-1.5">
+                    <Repeat className="w-3.5 h-3.5 text-purple-500" />
+                    Recurring Cycle
+                  </Label>
+                  <Select
+                    value={recurrenceInterval}
+                    onValueChange={(value) => setRecurrenceInterval(value as RecurrenceInterval)}
+                  >
+                    <SelectTrigger className="border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-blue-400 rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                      <SelectItem value="none" className="dark:text-gray-300 dark:focus:bg-slate-700">
+                        One-time (None)
+                      </SelectItem>
+                      <SelectItem
+                        value="monthly"
+                        className="dark:text-gray-300 dark:focus:bg-slate-700"
+                      >
+                        Monthly
+                      </SelectItem>
+                      <SelectItem
+                        value="quarterly"
+                        className="dark:text-gray-300 dark:focus:bg-slate-700"
+                      >
+                        Quarterly (3 Months)
+                      </SelectItem>
+                      <SelectItem
+                        value="yearly"
+                        className="dark:text-gray-300 dark:focus:bg-slate-700"
+                      >
+                        Yearly (Annual)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Subtasks / Checklist Section */}
               <div className="space-y-2">
-                <Label htmlFor="dueDate" className="text-gray-700 dark:text-gray-300 font-medium">
-                  Due Date
-                </Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-blue-400 rounded-lg"
-                />
+                <div className="flex items-center justify-between">
+                  <Label className="text-gray-700 dark:text-gray-300 font-medium flex items-center gap-1.5">
+                    <CheckSquare className="w-4 h-4 text-blue-500" />
+                    Subtasks / Checklist
+                  </Label>
+                  {subtasks.length > 0 && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {subtasks.filter((s) => s.completed).length}/{subtasks.length} completed
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    value={newSubtaskTitle}
+                    onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                    placeholder="Add a checklist item..."
+                    className="border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm h-9"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSubtask();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAddSubtask}
+                    className="h-9 px-3"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {subtasks.length > 0 && (
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pt-1">
+                    {subtasks.map((st) => (
+                      <div
+                        key={st.id}
+                        className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-800/70 border border-gray-100 dark:border-slate-700/60"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSubtask(st.id)}
+                          className="flex items-center gap-2 text-left flex-1 text-sm text-gray-700 dark:text-gray-200"
+                        >
+                          {st.completed ? (
+                            <CheckSquare className="w-4 h-4 text-blue-500 shrink-0" />
+                          ) : (
+                            <Square className="w-4 h-4 text-gray-400 shrink-0" />
+                          )}
+                          <span className={st.completed ? 'line-through text-gray-400' : ''}>
+                            {st.title}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSubtask(st.id)}
+                          className="text-gray-400 hover:text-red-500 p-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Tags Section */}
               <div className="space-y-2">
                 <Label className="text-gray-700 dark:text-gray-300 font-medium">Tags</Label>
                 <div className="flex flex-wrap gap-2 mb-2">
-                  {selectedTags.map(tag => (
-                    <Badge key={tag.id} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }} className="border">
+                  {selectedTags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      style={{
+                        backgroundColor: tag.color + '20',
+                        color: tag.color,
+                        borderColor: tag.color,
+                      }}
+                      className="border"
+                    >
                       {tag.name}
-                      <button onClick={() => toggleTag(tag)} className="ml-1 hover:text-red-500"><X className="w-3 h-3" /></button>
+                      <button
+                        type="button"
+                        onClick={() => toggleTag(tag)}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </Badge>
                   ))}
                   <Popover open={isTagPopoverOpen} onOpenChange={setIsTagPopoverOpen}>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-6 text-xs rounded-full border-dashed">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-xs rounded-full border-dashed"
+                      >
                         <Plus className="w-3 h-3 mr-1" /> Add Tag
                       </Button>
                     </PopoverTrigger>
@@ -288,15 +492,19 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
                       <div className="space-y-3">
                         <h4 className="font-medium text-xs text-muted-foreground">Select Tag</h4>
                         <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-                          {availableTags.map(tag => (
+                          {availableTags.map((tag) => (
                             <Badge
                               key={tag.id}
                               variant="outline"
                               style={{
-                                backgroundColor: selectedTags.find(t => t.id === tag.id) ? tag.color : 'transparent',
-                                color: selectedTags.find(t => t.id === tag.id) ? '#fff' : tag.color,
+                                backgroundColor: selectedTags.find((t) => t.id === tag.id)
+                                  ? tag.color
+                                  : 'transparent',
+                                color: selectedTags.find((t) => t.id === tag.id)
+                                  ? '#fff'
+                                  : tag.color,
                                 borderColor: tag.color,
-                                cursor: 'pointer'
+                                cursor: 'pointer',
                               }}
                               onClick={() => toggleTag(tag)}
                             >
@@ -305,22 +513,31 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
                           ))}
                         </div>
                         <div className="border-t pt-2">
-                          <h4 className="font-medium text-xs text-muted-foreground mb-2">Create New</h4>
+                          <h4 className="font-medium text-xs text-muted-foreground mb-2">
+                            Create New
+                          </h4>
                           <div className="flex gap-2">
                             <Input
                               value={newTagName}
-                              onChange={e => setNewTagName(e.target.value)}
+                              onChange={(e) => setNewTagName(e.target.value)}
                               placeholder="Tag name"
                               className="h-8 text-xs"
                             />
                             <Input
                               type="color"
                               value={newTagColor}
-                              onChange={e => setNewTagColor(e.target.value)}
+                              onChange={(e) => setNewTagColor(e.target.value)}
                               className="w-8 h-8 p-0 border-0"
                             />
                           </div>
-                          <Button size="sm" className="w-full mt-2 h-7 text-xs" onClick={handleCreateTag}>Create</Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="w-full mt-2 h-7 text-xs"
+                            onClick={handleCreateTag}
+                          >
+                            Create
+                          </Button>
                         </div>
                       </div>
                     </PopoverContent>
@@ -332,7 +549,9 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
             <TabsContent value="comments" className="h-[350px] flex flex-col">
               <ScrollArea className="flex-1 pr-4 mb-4">
                 {isLoadingComments ? (
-                  <div className="flex justify-center p-4"><span className="loader"></span></div>
+                  <div className="flex justify-center p-4">
+                    <span className="loader"></span>
+                  </div>
                 ) : comments.length === 0 ? (
                   <p className="text-center text-gray-500 text-sm py-8">No comments yet.</p>
                 ) : (
@@ -340,12 +559,20 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
                     {comments.map((comment) => (
                       <div key={comment.id} className="flex gap-3 group">
                         <Avatar className="w-8 h-8">
-                          <AvatarImage src={comment.user.avatar_path ? `/storage/${comment.user.avatar_path}` : undefined} />
+                          <AvatarImage
+                            src={
+                              comment.user.avatar_path
+                                ? `/storage/${comment.user.avatar_path}`
+                                : undefined
+                            }
+                          />
                           <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold dark:text-gray-200">{comment.user.name}</span>
+                            <span className="text-sm font-semibold dark:text-gray-200">
+                              {comment.user.name}
+                            </span>
                             <span className="text-xs text-gray-400">
                               {new Date(comment.created_at).toLocaleString()}
                             </span>
@@ -393,15 +620,21 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
 
             <TabsContent value="activity">
               <ScrollArea className="h-[300px] pr-4">
-                {activities.length === 0 ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400 py-8">No activity yet</div>
+                {isLoadingActivities ? (
+                  <div className="text-center text-gray-500 py-8">Loading...</div>
+                ) : activities.length === 0 ? (
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                    No activity yet
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     {activities.map((activity) => (
                       <div key={activity.id} className="flex gap-3 text-sm">
                         <div className="min-w-[4px] w-1 bg-gray-200 dark:bg-slate-700 rounded-full" />
                         <div className="flex-1">
-                          <p className="font-medium text-gray-800 dark:text-gray-200">{activity.description}</p>
+                          <p className="font-medium text-gray-800 dark:text-gray-200">
+                            {activity.description}
+                          </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             {new Date(activity.created_at).toLocaleString()}
                           </p>
@@ -413,7 +646,7 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
               </ScrollArea>
             </TabsContent>
           </Tabs>
-        </div >
+        </div>
 
         <DialogFooter>
           <Button
@@ -431,7 +664,7 @@ export default function TaskModal({ open, onClose, onSave, task, defaultStatus =
             {task ? 'Update' : 'Create'} Task
           </Button>
         </DialogFooter>
-      </DialogContent >
-    </Dialog >
+      </DialogContent>
+    </Dialog>
   );
 }

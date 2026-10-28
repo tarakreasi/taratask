@@ -4,7 +4,19 @@ import { useState, useRef, useEffect } from 'react';
 import { Task } from '@/types/task';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit2, Trash2, MoreHorizontal, Clock, Calendar, MessageSquare, Tag as TagIcon } from 'lucide-react';
+import {
+  Edit2,
+  Trash2,
+  MoreHorizontal,
+  Clock,
+  Calendar,
+  MessageSquare,
+  Tag as TagIcon,
+  Repeat,
+  CheckSquare,
+  Archive,
+  ArchiveRestore,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
@@ -13,37 +25,77 @@ interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (id: string | number) => void;
+  onArchive?: (id: string | number) => void;
   isOverlay?: boolean;
 }
 
 const priorityStyles = {
   low: {
     badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-    text: 'Low Priority'
+    text: 'Low Priority',
   },
   medium: {
     badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-    text: 'Medium Priority'
+    text: 'Medium Priority',
   },
   high: {
     badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
-    text: 'High Priority'
+    text: 'High Priority',
   },
 };
 
-const getDueDateStyle = (dueDate: string | null | undefined) => {
+const recurrenceLabels: Record<string, string> = {
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  yearly: 'Yearly',
+};
+
+const getDueDateStyle = (dueDate: string | null | undefined, status: string) => {
   if (!dueDate) return null;
   const due = new Date(dueDate);
   const now = new Date();
   const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return { color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30', label: 'Overdue' };
-  if (diffDays === 0) return { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30', label: 'Today' };
-  if (diffDays <= 2) return { color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-950/30', label: `${diffDays}d left` };
-  return { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30', label: due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) };
+  if (status === 'done') {
+    return {
+      color: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+      label: due.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    };
+  }
+
+  if (diffDays < 0)
+    return {
+      color: 'text-rose-600 dark:text-rose-400',
+      bg: 'bg-rose-50 dark:bg-rose-950/30 ring-1 ring-rose-500/30',
+      label: `Overdue (${Math.abs(diffDays)}d)`,
+    };
+  if (diffDays === 0)
+    return {
+      color: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-50 dark:bg-amber-950/30 ring-1 ring-amber-500/30',
+      label: 'Due Today',
+    };
+  if (diffDays <= 7)
+    return {
+      color: 'text-orange-600 dark:text-orange-400',
+      bg: 'bg-orange-50 dark:bg-orange-950/30',
+      label: `${diffDays}d left`,
+    };
+  if (diffDays <= 30)
+    return {
+      color: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-50/70 dark:bg-amber-950/20',
+      label: `${diffDays}d (${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`,
+    };
+  return {
+    color: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+    label: due.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+  };
 };
 
-export default function TaskCard({ task, onEdit, onDelete, isOverlay }: TaskCardProps) {
+export default function TaskCard({ task, onEdit, onDelete, onArchive, isOverlay }: TaskCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,18 +123,21 @@ export default function TaskCard({ task, onEdit, onDelete, isOverlay }: TaskCard
     }
 
     try {
-      await axios.put(`/tasks/${task.id}`, {
-        ...task,
-        title: title
-      }, {
-        headers: { 'Accept': 'application/json' }
-      });
+      await axios.put(
+        `/tasks/${task.id}`,
+        {
+          title: title,
+        },
+        {
+          headers: { Accept: 'application/json' },
+        }
+      );
 
       setIsEditing(false);
       router.reload({ only: ['tasks'] });
     } catch (error) {
       console.error('Failed to update task:', error);
-      setTitle(task.title); // Revert on error
+      setTitle(task.title);
       setIsEditing(false);
     }
   };
@@ -95,6 +150,9 @@ export default function TaskCard({ task, onEdit, onDelete, isOverlay }: TaskCard
     }
   };
 
+  const subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
+  const completedSubtasks = subtasks.filter((s) => s.completed).length;
+
   return (
     <motion.div
       layout
@@ -103,46 +161,74 @@ export default function TaskCard({ task, onEdit, onDelete, isOverlay }: TaskCard
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className={`relative overflow-hidden p-4 backdrop-blur-xl transition-all cursor-grab active:cursor-grabbing group rounded-xl
-        ${isOverlay
-          ? 'bg-white/90 dark:bg-slate-800/90 border-orange-500 dark:border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.4)] dark:shadow-[0_0_20px_rgba(251,146,60,0.3)] scale-[1.02] ring-1 ring-orange-400/50'
-          : 'bg-white/60 dark:bg-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-700/80 border border-gray-200/80 dark:border-white/10 shadow-[0_4px_20px_0_rgba(0,0,0,0.02)]'
+      <Card
+        className={`relative overflow-hidden p-4 backdrop-blur-xl transition-all cursor-grab active:cursor-grabbing group rounded-xl
+        ${
+          task.archived_at
+            ? 'opacity-70 border-dashed bg-slate-100/60 dark:bg-slate-900/50 border-gray-300 dark:border-slate-700'
+            : isOverlay
+              ? 'bg-white/90 dark:bg-slate-800/90 border-orange-500 dark:border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.4)] dark:shadow-[0_0_20px_rgba(251,146,60,0.3)] scale-[1.02] ring-1 ring-orange-400/50'
+              : 'bg-white/60 dark:bg-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-700/80 border border-gray-200/80 dark:border-white/10 shadow-[0_4px_20px_0_rgba(0,0,0,0.02)]'
         }`}
       >
         {/* Subtle Noise Texture Overlay */}
         <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
         <div className="flex justify-between items-start mb-2 relative z-10">
-          <span className={`${priorityStyles[task.priority].badge} bg-opacity-70 dark:bg-opacity-20 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md`}>
-            {task.priority}
-          </span>
-          <button className="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span
+              className={`${priorityStyles[task.priority].badge} bg-opacity-70 dark:bg-opacity-20 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md`}
+            >
+              {task.priority}
+            </span>
+            {task.recurrence_interval && task.recurrence_interval !== 'none' && (
+              <span
+                className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-purple-100/80 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
+                title={`Recurring: ${recurrenceLabels[task.recurrence_interval]}`}
+              >
+                <Repeat className="w-2.5 h-2.5" />
+                {recurrenceLabels[task.recurrence_interval]}
+              </span>
+            )}
+            {task.archived_at && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-gray-300">
+                Archived
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => onEdit(task)}
+            className="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
             <MoreHorizontal className="h-4 w-4" />
           </button>
         </div>
 
         {/* Due Date Badge */}
-        {task.due_date && (() => {
-          const style = getDueDateStyle(task.due_date);
-          return style ? (
-            <div className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md mb-2 w-fit relative z-10 ${style.bg} ${style.color}`}>
-              <Clock className="w-3 h-3" />
-              {style.label}
-            </div>
-          ) : null;
-        })()}
+        {task.due_date &&
+          (() => {
+            const style = getDueDateStyle(task.due_date, task.status);
+            return style ? (
+              <div
+                className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md mb-2 w-fit relative z-10 ${style.bg} ${style.color}`}
+              >
+                <Clock className="w-3 h-3" />
+                {style.label}
+              </div>
+            ) : null;
+          })()}
 
         {/* Tags */}
         {task.tags && task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2 relative z-10">
-            {task.tags.map(tag => (
+            {task.tags.map((tag) => (
               <span
                 key={tag.id}
                 className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border"
                 style={{
                   backgroundColor: tag.color + '15',
                   color: tag.color,
-                  borderColor: tag.color + '40'
+                  borderColor: tag.color + '40',
                 }}
               >
                 {tag.name}
@@ -178,20 +264,58 @@ export default function TaskCard({ task, onEdit, onDelete, isOverlay }: TaskCard
           </p>
         )}
 
+        {/* Subtasks Progress Indicator */}
+        {subtasks.length > 0 && (
+          <div className="mb-3 relative z-10">
+            <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400 mb-1">
+              <span className="flex items-center gap-1 font-medium">
+                <CheckSquare className="w-3 h-3 text-blue-500" />
+                Checklist
+              </span>
+              <span className="font-semibold">
+                {completedSubtasks}/{subtasks.length}
+              </span>
+            </div>
+            <div className="w-full h-1.5 bg-gray-200/70 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-300 rounded-full"
+                style={{ width: `${Math.round((completedSubtasks / subtasks.length) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50 relative z-10">
           <div className="flex gap-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onEdit(task)}
+              title="Edit task"
               className="h-7 w-7 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Edit2 className="h-3.5 w-3.5" />
             </Button>
+            {onArchive && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onArchive(task.id)}
+                title={task.archived_at ? 'Restore from archive' : 'Archive task'}
+                className="h-7 w-7 p-0 hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                {task.archived_at ? (
+                  <ArchiveRestore className="h-3.5 w-3.5" />
+                ) : (
+                  <Archive className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onDelete(task.id)}
+              title="Delete task"
               className="h-7 w-7 p-0 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -217,7 +341,10 @@ export default function TaskCard({ task, onEdit, onDelete, isOverlay }: TaskCard
 
             <div className="text-gray-400 dark:text-gray-500 text-[10px] flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              {new Date((task as any).created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {new Date((task as any).created_at || Date.now()).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              })}
             </div>
           </div>
         </div>
