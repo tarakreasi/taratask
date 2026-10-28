@@ -48,13 +48,13 @@ export default function Login({ status }: { status?: string }) {
 
                     <form onSubmit={submit} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
                             <input
-                                type="email"
+                                type="text"
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
                                 className="w-full px-4 py-2.5 rounded-xl bg-white/50 dark:bg-slate-800/50 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-900 dark:text-white placeholder-gray-400"
-                                placeholder="name@example.com"
+                                placeholder="twantoro"
                                 autoFocus
                             />
                             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
