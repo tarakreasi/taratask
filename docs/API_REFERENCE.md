@@ -59,24 +59,44 @@
 **Endpoint:** `DELETE /tasks/{id}`
 **Response:** Redirect (302) or 204 No Content (if JSON requested).
 
+#### Archive / Restore Task
+**Endpoint:** `POST /tasks/{id}/archive`
+**Usage:** Toggles `archived_at` timestamp on a single task.
+
+#### Bulk Archive Done Tasks
+**Endpoint:** `POST /boards/{board}/archive-done`
+**Usage:** Sets `archived_at` on all unarchived `done` tasks belonging to `{board}`.
+
 ### 2.2 Board Operations
 
 #### Create Board
 **Endpoint:** `POST /boards`
 **Payload:** `{"title": "New Board", "theme_color": "#FF0000"}`
 
+#### Rename / Update Board
+**Endpoint:** `PUT /boards/{id}`
+**Payload:** `{"title": "Updated Board Title", "theme_color": "#10B981"}`
+
 #### Delete Board
 **Endpoint:** `DELETE /boards/{id}`
-**Constraint:** Cannot delete the last remaining board.
+**Constraint:** Requires board ownership (`403` otherwise).
 
 ---
 
-## 3. AJAX Data Endpoints
-*Pure JSON endpoints for dynamic client-side fetching.*
+## 3. AJAX & Export Endpoints
+*Pure JSON / Stream endpoints for dynamic client-side fetching and backups.*
 
 ### 3.1 Task Activities
 **Endpoint:** `GET /tasks/{id}/activities`
-**Response:** JSON Array of activity logs.
+**Response:** JSON Array of activity logs (coalesced within 5-minute windows for rapid autosaves).
+
+### 3.2 Cross-Board Search
+**Endpoint:** `GET /search/tasks?q={keyword}`
+**Response:** JSON Array of up to 25 matching tasks across all boards owned by the authenticated user.
+
+### 3.3 Data Export (CSV / JSON)
+**Endpoint:** `GET /export/tasks?format=csv|json&board_id={optional}`
+**Response:** Downloadable attachment (`taratask-export-YYYY-MM-DD.csv` or `.json`) with CSV formula-injection sanitization.
 
 ---
 

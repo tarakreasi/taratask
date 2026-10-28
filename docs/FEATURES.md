@@ -85,3 +85,20 @@ A strict data structure enforcing required fields to prevent "zombie tasks" (tas
 3.  **WIP Count:** current_active_tasks. (Saturation).
 
 *Rationale:* These metrics are chosen because they are actionable. If Cycle Time increases, the bottleneck is in the process, not the person.
+
+---
+
+## 6. Personal Workflow Extensions (v2.1)
+
+### 6.1 Quick Braindump Capture (`/capture`)
+*   **Problem:** Friction from mandatory priority and due-date fields discourages rapid idea capture on mobile devices.
+*   **Solution:** Dedicated `/capture` route that accepts a title and optional notes (automatically converting `- ` or `* ` lines into `subtasks`), saves drafts to `localStorage` as you type, and inserts directly into the selected board's `To Do` column.
+
+### 6.2 Smart Autosave & Activity Coalescing
+*   **Problem:** Users forget to click "Update Task" after checking off a subtask or adding notes; conversely, naive autosave floods the `activities` table.
+*   **Solution:** `TaskModal` debounces edits (`650ms`) via JSON `PUT /tasks/{id}` with live `Saving...` / `Autosaved` badges, while `TaskController` coalesces consecutive `updated` activity logs within a 5-minute window into a single record.
+
+### 6.3 Archival, Recurrence & Data Portability
+*   **Task Archival:** Completed tasks can be archived individually (`POST /tasks/{task}/archive`) or in bulk (`POST /boards/{board}/archive-done`) without losing historical data.
+*   **Recurring Tasks:** Tasks configured with `monthly`, `quarterly`, or `yearly` recurrence automatically spawn the next cycle's `todo` task with reset subtasks upon completion.
+*   **Cross-Board Search & Export:** Server-side search (`GET /search/tasks`) powers the `Ctrl+K` Command Palette across all boards, and `GET /export/tasks?format=csv|json` provides formula-sanitized data backups.

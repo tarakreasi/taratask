@@ -5,11 +5,17 @@
 
 ---
 
-## 1. Unit Testing (Component Inspection)
-*Verifying individual components before assembly.*
+## 1. Automated Test Suite (CI/CD & Local)
+*Verifying individual components and full-stack feature flows.*
 
-**Tools:** PHPUnit, Jest
-**Command:** `php artisan test --testsuite=Unit`
+**Tools:** PHPUnit 11 (`#[Test]` attributes), TypeScript (`tsc --noEmit`), Vite Build
+**Commands:**
+```bash
+npx tsc --noEmit
+npx vite build
+php artisan test --compact
+```
+**Current Coverage:** `78 passed (259 assertions)` across Unit and Feature test suites.
 
 ### Critical Checkpoints:
 *   [ ] **Models:** Do `Task` and `User` models strictly enforce fillable attributes?

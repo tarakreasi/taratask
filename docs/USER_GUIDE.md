@@ -7,14 +7,17 @@
 
 ## 1. Quick Start (The "Happy Path")
 
-**Login:**
-*   **URL:** `http://localhost:8000` / `http://localhost:5173`
-*   **Default Creds:** `ajarsinau@gmail.com` / `password`
+**Access URLs:**
+*   **Production (Tailscale `ippahub` Only):** `https://task.tarakreasi.com`
+*   **Mobile Quick Braindump Capture:** `https://task.tarakreasi.com/capture`
+*   **Local Development:** `http://127.0.0.1:8000` (Username: `twantoro`)
 
 **Core Actions:**
-*   **Create Task:** Press `N` or click the `+` in any column header.
-*   **Move Task:** Drag card. If it snaps back, check your network.
-*   **Edit Task:** Double-click the title.
+*   **Quick Braindump (`/capture`):** Open `/capture` on mobile or desktop, select a Board (e.g., `Parking Lot`), type your idea (lines starting with `- ` become checklist subtasks), and press `Enter`.
+*   **Create Task on Board:** Press `N` or click `+ Add Task`.
+*   **Edit Task (Autosave):** Click any task card. Changes to Title, Description, Subtasks, Priority, Status, Due Date, Recurrence, and Tags save automatically (`✓ Autosaved`).
+*   **Rename Board:** Hover over any board in the left sidebar and click the pencil (`Edit`) icon.
+*   **Archive Completed Tasks:** Click `Archive (N)` in the `Done` column header to clear finished tasks without deleting history.
 
 ---
 

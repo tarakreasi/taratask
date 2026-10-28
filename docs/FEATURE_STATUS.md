@@ -1,7 +1,7 @@
 # Feature Validation Matrix
 
-**Version Ref:** 1.2.0-beta
-**Validation Date:** December 21, 2025
+**Version Ref:** 2.1.0
+**Validation Date:** October 28, 2026
 
 ---
 
@@ -9,10 +9,11 @@
 
 | Metric | Status | Verification |
 |--------|--------|--------------|
-| **Task Management** | Operational | CRUD operations verified via Unit Test. |
-| **Search & Filter** | Operational | Real-time filtering verified manually. |
-| **Data Persistence** | Operational | SQLite transactions confirmed. |
-| **Cycle Logic** | Operational | Start/End timestamp logic verified. |
+| **Task Management & Subtasks** | Operational | CRUD, subtasks checklist, and recurring auto-renewal verified via PHPUnit. |
+| **Smart Autosave** | Operational | Debounced (`650ms`) PUT updates + 5-minute activity log coalescing verified. |
+| **Cross-Board Search & Export** | Operational | Server-side `/search/tasks` (`Ctrl+K`) and sanitized CSV/JSON `/export/tasks` verified. |
+| **Task Archival** | Operational | Single & bulk `Done` archival (`archived_at`) and restore flow verified. |
+| **Cycle Logic & Recurring** | Operational | Start/End timestamps and `monthly`/`quarterly`/`yearly` renewal verified. |
 
 ---
 
@@ -20,23 +21,17 @@
 
 | Component | Status | Verification |
 |-----------|--------|--------------|
-| **Multi-Board** | Operational | Context switching verified. |
-| **Responsive Grid** | Operational | Mobile/Desktop breakpoints verified. |
-| **Dark Mode** | Operational | System preference detection verified. |
+| **Multi-Board & Inline Rename** | Operational | Context switching and sidebar inline rename verified. |
+| **Quick Braindump (`/capture`)** | Operational | Mobile-first capture with `localStorage` draft persistence verified. |
+| **Responsive Grid & Dark Mode** | Operational | Mobile/Desktop breakpoints and system theme preference verified. |
 
 ---
 
-## 3. Experience & Aesthetics
+## 3. Security & Zero-Trust Posture
 
-| Feature | Status | Engineering Note |
+| Control | Status | Engineering Note |
 |---------|--------|------------------|
-| **Optimistic UI** | Active | implemented via Inertia/React state. |
-| **Transitions** | Active | Framer Motion orchestration verified. |
-| **Visual Feedback** | Active | Toast notifications trigger on all CRUD events. |
-
----
-
-## 4. Known Constraints
-
-1.  **Search Scope:** Currently limited to client-side index. Scaling required for >1000 tasks.
-2.  **Archival:** Hard delete only. Soft delete/Archive pending Q2 2026.
+| **Network Isolation (`ippahub`)** | Active | Caddy restricts access to Tailscale subnet `100.64.10.0/24`; external traffic redirects `302` to `tarakreasi.com`. |
+| **IDOR & SQLi Hardening** | Active | Strict board ownership checks across all controllers and whitelisted sorting parameters. |
+| **Single-Operator Auth** | Active | Public `/register` and `/forgot-password` routes disabled (`404`); session encryption enabled. |
+| **CI/CD Gatekeeping** | Active | GitHub Actions passes `tsc --noEmit`, `vite build`, and 78 PHPUnit tests (`259 assertions`). |
