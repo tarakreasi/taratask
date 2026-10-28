@@ -383,6 +383,15 @@ export default function KanbanBoard({
     }
   };
 
+  const handleAutosaveTask = (updatedTask: Task) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id == updatedTask.id ? { ...t, ...updatedTask } : t))
+    );
+    setEditingTask((prev) =>
+      prev && prev.id == updatedTask.id ? { ...prev, ...updatedTask } : prev
+    );
+  };
+
   const handleSaveTask = (
     taskData: Omit<Task, 'id' | 'createdAt' | 'updated_at'> & { id?: string | number }
   ) => {
@@ -517,6 +526,7 @@ export default function KanbanBoard({
           if (onClearExternalEdit) onClearExternalEdit();
         }}
         onSave={handleSaveTask}
+        onAutosave={handleAutosaveTask}
         task={editingTask}
         defaultStatus={defaultStatus}
         availableTags={availableTags}

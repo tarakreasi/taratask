@@ -181,5 +181,53 @@ class Phase2And3FeaturesTest extends TestCase
                 ->has('recentTasks')
         );
     }
+
+    #[Test]
+    public function rapid_autosave_updates_coalesce_activity_logs_and_return_json(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'title' => 'Initial Draft',
+            'description' => 'Step 1',
+            'status' => 'todo',
+            'priority' => 'medium',
+        ]);
+
+        // Simulate 3 rapid autosave requests within 5 minutes
+        $this->actingAs($this->user)
+            ->putJson("/tasks/{$task->id}", [
+                'title' => 'Initial Draft v2',
+                'description' => 'Step 1 updated',
+            ])
+            ->assertOk()
+            ->assertJsonPath('title', 'Initial Draft v2');
+
+        $this->actingAs($this->user)
+            ->putJson("/tasks/{$task->id}", [
+                'title' => 'Initial Draft v3',
+                'description' => 'Step 1 + Step 2',
+                'subtasks' => [
+                    ['id' => 'st-1', 'title' => 'Subtask A', 'completed' => true],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('title', 'Initial Draft v3')
+            ->assertJsonPath('subtasks.0.completed', true);
+
+        $this->actingAs($this->user)
+            ->putJson("/tasks/{$task->id}", [
+                'title' => 'Final Autosaved Title',
+                'priority' => 'high',
+            ])
+            ->assertOk()
+            ->assertJsonPath('title', 'Final Autosaved Title')
+            ->assertJsonPath('priority', 'high');
+
+        // Ensure all 3 rapid autosaves coalesced into a single 'updated' activity entry
+        $updatedActivities = $task->activities()->where('type', 'updated')->get();
+        $this->assertCount(1, $updatedActivities);
+        $this->assertEquals('Final Autosaved Title', $updatedActivities->first()->properties['title']);
+        $this->assertEquals('high', $updatedActivities->first()->properties['priority']);
+    }
 }
 

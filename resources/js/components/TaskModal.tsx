@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Task, Priority, Status, RecurrenceInterval, Subtask } from '@/types/task';
 import { Tag } from '@/types/tag';
 import {
@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, MessageSquare, Trash2, Send, CheckSquare, Square, Repeat } from 'lucide-react';
+import { Plus, X, MessageSquare, Trash2, Send, CheckSquare, Square, Repeat, Check, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
@@ -34,6 +34,7 @@ interface TaskModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (task: Omit<Task, 'id' | 'createdAt' | 'updated_at'> & { id?: string | number }) => void;
+  onAutosave?: (updatedTask: Task) => void;
   task?: Task | null;
   defaultStatus?: Status;
   availableTags?: Tag[];
@@ -44,6 +45,7 @@ export default function TaskModal({
   open,
   onClose,
   onSave,
+  onAutosave,
   task,
   defaultStatus = 'todo',
   availableTags = [],
@@ -66,29 +68,130 @@ export default function TaskModal({
   const [newComment, setNewComment] = useState('');
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const lastSavedPayloadRef = useRef<string>('');
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftKey = `taratask_modal_draft_${activeBoardId || 'default'}`;
+
+  const buildPayload = () => ({
+    title: title.trim(),
+    description: description.trim() || null,
+    subtasks,
+    priority,
+    status,
+    due_date: dueDate || null,
+    recurrence_interval: recurrenceInterval,
+    tags: selectedTags.map((t) => t.id),
+  });
 
   useEffect(() => {
+    if (!open) {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+      setAutosaveStatus('idle');
+      return;
+    }
+
     if (task) {
+      const initDue = task.due_date ? task.due_date.split('T')[0] : '';
+      const initRecurrence = task.recurrence_interval || 'none';
+      const initSubtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
+      const initTags = task.tags || [];
+
       setTitle(task.title);
       setDescription(task.description || '');
       setPriority(task.priority);
       setStatus(task.status);
-      setDueDate(task.due_date ? task.due_date.split('T')[0] : '');
-      setRecurrenceInterval(task.recurrence_interval || 'none');
-      setSubtasks(Array.isArray(task.subtasks) ? task.subtasks : []);
-      setSelectedTags(task.tags || []);
+      setDueDate(initDue);
+      setRecurrenceInterval(initRecurrence);
+      setSubtasks(initSubtasks);
+      setSelectedTags(initTags);
+      setAutosaveStatus('idle');
+
+      lastSavedPayloadRef.current = JSON.stringify({
+        title: task.title.trim(),
+        description: (task.description || '').trim() || null,
+        subtasks: initSubtasks,
+        priority: task.priority,
+        status: task.status,
+        due_date: initDue || null,
+        recurrence_interval: initRecurrence,
+        tags: initTags.map((t) => t.id),
+      });
     } else {
-      setTitle('');
-      setDescription('');
+      let restored = false;
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem(draftKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            setTitle(parsed.title || '');
+            setDescription(parsed.description || '');
+            setSubtasks(Array.isArray(parsed.subtasks) ? parsed.subtasks : []);
+            restored = true;
+          }
+        } catch {
+          // ignore invalid draft
+        }
+      }
+      if (!restored) {
+        setTitle('');
+        setDescription('');
+        setSubtasks([]);
+      }
       setPriority('medium');
       setStatus(defaultStatus);
       setDueDate('');
       setRecurrenceInterval('none');
-      setSubtasks([]);
       setSelectedTags([]);
+      lastSavedPayloadRef.current = '';
     }
     setNewSubtaskTitle('');
-  }, [task, defaultStatus, open]);
+  }, [task?.id, defaultStatus, open]);
+
+  // Autosave for existing tasks (debounced) & localStorage draft for new tasks
+  useEffect(() => {
+    if (!open) return;
+
+    if (!task?.id) {
+      if (typeof window !== 'undefined') {
+        if (title.trim() || description.trim() || subtasks.length > 0) {
+          localStorage.setItem(draftKey, JSON.stringify({ title, description, subtasks }));
+        } else {
+          localStorage.removeItem(draftKey);
+        }
+      }
+      return;
+    }
+
+    if (!title.trim()) return;
+
+    const currentPayload = buildPayload();
+    const serialized = JSON.stringify(currentPayload);
+    if (serialized === lastSavedPayloadRef.current) return;
+
+    setAutosaveStatus('saving');
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+
+    autosaveTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await axios.put(`/tasks/${task.id}`, currentPayload, {
+          headers: { Accept: 'application/json' },
+        });
+        lastSavedPayloadRef.current = serialized;
+        setAutosaveStatus('saved');
+        if (onAutosave && res.data) {
+          onAutosave(res.data);
+        }
+      } catch (err) {
+        console.error('Autosave failed:', err);
+        setAutosaveStatus('error');
+      }
+    }, 650);
+
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [title, description, subtasks, priority, status, dueDate, recurrenceInterval, selectedTags, open, task?.id]);
 
   useEffect(() => {
     if (task?.id && open) {
@@ -137,7 +240,7 @@ export default function TaskModal({
 
     try {
       const response = await axios.post(`/tasks/${task.id}/comments`, {
-        body: newComment,
+        content: newComment,
       });
       setComments([response.data, ...comments]);
       setNewComment('');
@@ -157,6 +260,10 @@ export default function TaskModal({
 
   const handleSave = () => {
     if (!title.trim()) return;
+
+    if (!task?.id && typeof window !== 'undefined') {
+      localStorage.removeItem(draftKey);
+    }
 
     onSave({
       id: task?.id,
@@ -210,11 +317,40 @@ export default function TaskModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[540px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.2)]">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-gray-800 dark:text-gray-100">
-            {task ? 'Edit Task' : 'Add New Task'}
-          </DialogTitle>
+          <div className="flex items-center justify-between pr-6">
+            <DialogTitle className="text-2xl text-gray-800 dark:text-gray-100">
+              {task ? 'Edit Task' : 'Add New Task'}
+            </DialogTitle>
+            {task && autosaveStatus !== 'idle' && (
+              <span
+                className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full transition-all ${
+                  autosaveStatus === 'saving'
+                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300'
+                    : autosaveStatus === 'saved'
+                      ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300'
+                      : 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-300'
+                }`}
+              >
+                {autosaveStatus === 'saving' && (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Saving...
+                  </>
+                )}
+                {autosaveStatus === 'saved' && (
+                  <>
+                    <Check className="w-3 h-3" />
+                    Autosaved
+                  </>
+                )}
+                {autosaveStatus === 'error' && 'Save failed'}
+              </span>
+            )}
+          </div>
           <DialogDescription className="text-gray-600 dark:text-gray-400">
-            {task ? 'Update the task details below.' : 'Create a new task for your board.'}
+            {task
+              ? 'Changes are saved automatically as you edit.'
+              : 'Create a new task for your board (draft is saved locally).'}
           </DialogDescription>
         </DialogHeader>
 

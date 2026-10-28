@@ -39,8 +39,18 @@ export default function QuickCapture({
         return defaultBoard?.id || 0;
     });
 
-    const [title, setTitle] = useState('');
-    const [notes, setNotes] = useState('');
+    const [title, setTitle] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('taratask_capture_draft_title') || '';
+        }
+        return '';
+    });
+    const [notes, setNotes] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('taratask_capture_draft_notes') || '';
+        }
+        return '';
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [justSaved, setJustSaved] = useState<string | null>(null);
     const [recentTasks, setRecentTasks] = useState<any[]>(initialRecentTasks);
@@ -50,6 +60,21 @@ export default function QuickCapture({
     useEffect(() => {
         titleInputRef.current?.focus();
     }, []);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            if (title) {
+                localStorage.setItem('taratask_capture_draft_title', title);
+            } else {
+                localStorage.removeItem('taratask_capture_draft_title');
+            }
+            if (notes) {
+                localStorage.setItem('taratask_capture_draft_notes', notes);
+            } else {
+                localStorage.removeItem('taratask_capture_draft_notes');
+            }
+        }
+    }, [title, notes]);
 
     const handleBoardChange = (id: number) => {
         setBoardId(id);
@@ -112,6 +137,10 @@ export default function QuickCapture({
             setJustSaved(title.trim());
             setTitle('');
             setNotes('');
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('taratask_capture_draft_title');
+                localStorage.removeItem('taratask_capture_draft_notes');
+            }
             titleInputRef.current?.focus();
 
             setTimeout(() => {

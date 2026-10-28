@@ -266,11 +266,25 @@ class TaskController extends Controller
                 $description = 'Updated subtasks checklist';
             }
 
-            $task->activities()->create([
-                'type' => 'updated',
-                'description' => $description,
-                'properties' => $changes,
-            ]);
+            $recentUpdateActivity = $task->activities()
+                ->where('type', 'updated')
+                ->where('created_at', '>=', now()->subMinutes(5))
+                ->latest()
+                ->first();
+
+            if ($recentUpdateActivity) {
+                $mergedProps = array_merge((array) $recentUpdateActivity->properties, $changes);
+                $recentUpdateActivity->update([
+                    'description' => $description,
+                    'properties' => $mergedProps,
+                ]);
+            } else {
+                $task->activities()->create([
+                    'type' => 'updated',
+                    'description' => $description,
+                    'properties' => $changes,
+                ]);
+            }
         }
 
         if ($request->wantsJson()) {
