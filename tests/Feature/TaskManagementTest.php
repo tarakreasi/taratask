@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Board;
 use App\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TaskManagementTest extends TestCase
@@ -23,7 +24,7 @@ class TaskManagementTest extends TestCase
         $this->board = Board::factory()->create(['user_id' => $this->user->id]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_view_kanban_board_when_authenticated()
     {
         $response = $this->actingAs($this->user)
@@ -33,7 +34,7 @@ class TaskManagementTest extends TestCase
         $response->assertInertia(fn ($page) => $page->component('Kanban'));
     }
 
-    /** @test */
+    #[Test]
     public function guest_is_redirected_to_login()
     {
         $response = $this->get('/');
@@ -41,7 +42,7 @@ class TaskManagementTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    /** @test */
+    #[Test]
     public function user_can_create_a_task()
     {
         $taskData = [
@@ -69,7 +70,7 @@ class TaskManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_update_a_task()
     {
         $task = Task::factory()->create([
@@ -91,7 +92,7 @@ class TaskManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_move_task_between_columns()
     {
         $task = Task::factory()->create([
@@ -117,7 +118,7 @@ class TaskManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function moving_task_to_in_progress_sets_started_at()
     {
         $task = Task::factory()->create([
@@ -135,7 +136,7 @@ class TaskManagementTest extends TestCase
         $this->assertNotNull($task->started_at);
     }
 
-    /** @test */
+    #[Test]
     public function moving_task_to_done_sets_completed_at()
     {
         $task = Task::factory()->create([
@@ -153,7 +154,7 @@ class TaskManagementTest extends TestCase
         $this->assertNotNull($task->completed_at);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_delete_a_task()
     {
         $task = Task::factory()->create([
@@ -169,7 +170,7 @@ class TaskManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_view_task_activities()
     {
         $task = Task::factory()->create([
@@ -196,7 +197,7 @@ class TaskManagementTest extends TestCase
         $response->assertJsonCount(2);
     }
 
-    /** @test */
+    #[Test]
     public function task_requires_title()
     {
         $response = $this->actingAs($this->user)
@@ -210,7 +211,7 @@ class TaskManagementTest extends TestCase
         $response->assertSessionHasErrors('title');
     }
 
-    /** @test */
+    #[Test]
     public function task_requires_valid_priority()
     {
         $response = $this->actingAs($this->user)
@@ -224,7 +225,7 @@ class TaskManagementTest extends TestCase
         $response->assertSessionHasErrors('priority');
     }
 
-    /** @test */
+    #[Test]
     public function task_requires_valid_status()
     {
         $response = $this->actingAs($this->user)
@@ -238,7 +239,7 @@ class TaskManagementTest extends TestCase
         $response->assertSessionHasErrors('status');
     }
 
-    /** @test */
+    #[Test]
     public function default_board_is_created_for_user_if_none_exists()
     {
         $newUser = User::factory()->create();

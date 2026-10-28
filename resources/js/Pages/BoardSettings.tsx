@@ -3,11 +3,11 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageProps } from '@/types';
 import { Settings, Palette, FileText, Trash2, Save } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
-import PrimaryButton from '@/Components/PrimaryButton';
-import DangerButton from '@/Components/DangerButton';
-import TextInput from '@/Components/TextInput';
-import InputLabel from '@/Components/InputLabel';
-import InputError from '@/Components/InputError';
+import PrimaryButton from '@/components/PrimaryButton';
+import DangerButton from '@/components/DangerButton';
+import TextInput from '@/components/TextInput';
+import InputLabel from '@/components/InputLabel';
+import InputError from '@/components/InputError';
 
 interface Board {
     id: number;

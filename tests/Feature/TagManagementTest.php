@@ -7,6 +7,7 @@ use App\Models\Board;
 use App\Models\Task;
 use App\Models\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class TagManagementTest extends TestCase
@@ -24,7 +25,7 @@ class TagManagementTest extends TestCase
         $this->board = Board::factory()->create(['user_id' => $this->user->id]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_create_a_tag()
     {
         $response = $this->actingAs($this->user)
@@ -42,7 +43,7 @@ class TagManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_delete_a_tag()
     {
         $tag = Tag::factory()->create([
@@ -58,7 +59,7 @@ class TagManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function tags_are_scoped_to_boards()
     {
         $board2 = Board::factory()->create(['user_id' => $this->user->id]);
@@ -77,7 +78,7 @@ class TagManagementTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function task_can_have_multiple_tags()
     {
         $task = Task::factory()->create(['board_id' => $this->board->id]);
@@ -89,7 +90,7 @@ class TagManagementTest extends TestCase
         $this->assertEquals(2, $task->tags()->count());
     }
 
-    /** @test */
+    #[Test]
     public function deleting_tag_removes_it_from_tasks()
     {
         $task = Task::factory()->create(['board_id' => $this->board->id]);
@@ -104,7 +105,7 @@ class TagManagementTest extends TestCase
         $this->assertEquals(0, $task->tags()->count());
     }
 
-    /** @test */
+    #[Test]
     public function tag_requires_name()
     {
         $response = $this->actingAs($this->user)
@@ -116,7 +117,7 @@ class TagManagementTest extends TestCase
         $response->assertSessionHasErrors('name');
     }
 
-    /** @test */
+    #[Test]
     public function tag_requires_board_id()
     {
         $response = $this->actingAs($this->user)

@@ -45,3 +45,4 @@ jobs:
 
       - name: Run Automated Tests (PHPUnit)
         run: php artisan test
+

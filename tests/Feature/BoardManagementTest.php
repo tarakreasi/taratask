@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Board;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BoardManagementTest extends TestCase
@@ -20,7 +21,7 @@ class BoardManagementTest extends TestCase
         $this->user = User::factory()->create();
     }
 
-    /** @test */
+    #[Test]
     public function user_can_create_a_board()
     {
         $response = $this->actingAs($this->user)
@@ -37,7 +38,7 @@ class BoardManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_update_board_title()
     {
         $board = Board::factory()->create([
@@ -57,7 +58,7 @@ class BoardManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_update_board_theme_color()
     {
         $board = Board::factory()->create([
@@ -77,7 +78,7 @@ class BoardManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_delete_a_board()
     {
         $board = Board::factory()->create([
@@ -93,7 +94,7 @@ class BoardManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_view_their_boards_on_kanban_page()
     {
         $board1 = Board::factory()->create(['user_id' => $this->user->id, 'title' => 'Board 1']);
@@ -109,7 +110,7 @@ class BoardManagementTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function user_can_switch_between_boards()
     {
         $board1 = Board::factory()->create(['user_id' => $this->user->id]);
@@ -124,7 +125,7 @@ class BoardManagementTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_delete_others_board()
     {
         $otherUser = User::factory()->create();
@@ -141,7 +142,7 @@ class BoardManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_update_others_board()
     {
         $otherUser = User::factory()->create();
@@ -162,7 +163,7 @@ class BoardManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function board_requires_title()
     {
         $response = $this->actingAs($this->user)
@@ -173,7 +174,7 @@ class BoardManagementTest extends TestCase
         $response->assertSessionHasErrors('title');
     }
 
-    /** @test */
+    #[Test]
     public function board_theme_color_defaults_if_not_provided()
     {
         $response = $this->actingAs($this->user)

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Board;
 use App\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Carbon\Carbon;
 
@@ -24,7 +25,7 @@ class AnalyticsTest extends TestCase
         $this->board = Board::factory()->create(['user_id' => $this->user->id]);
     }
 
-    /** @test */
+    #[Test]
     public function analytics_endpoint_returns_metrics()
     {
         $response = $this->actingAs($this->user)
@@ -39,7 +40,7 @@ class AnalyticsTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function analytics_calculates_average_cycle_time()
     {
         // Create tasks with known cycle times
@@ -66,7 +67,7 @@ class AnalyticsTest extends TestCase
         $this->assertEqualsWithDelta(4.0, $avgCycleTime, 0.5); // Average of 3 and 5 days
     }
 
-    /** @test */
+    #[Test]
     public function analytics_counts_work_in_progress()
     {
         Task::factory()->count(3)->create([
@@ -91,7 +92,7 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(5, $response->json('wipCount')); // 3 + 2
     }
 
-    /** @test */
+    #[Test]
     public function analytics_counts_completed_tasks()
     {
         Task::factory()->count(7)->create([
@@ -111,7 +112,7 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(7, $response->json('completedCount'));
     }
 
-    /** @test */
+    #[Test]
     public function analytics_calculates_throughput_for_last_7_days()
     {
         // Tasks completed in the last 7 days
@@ -135,7 +136,7 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(5, $response->json('throughput'));
     }
 
-    /** @test */
+    #[Test]
     public function analytics_are_scoped_to_board()
     {
         $board2 = Board::factory()->create(['user_id' => $this->user->id]);
@@ -159,7 +160,7 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(3, $response->json('completedCount'));
     }
 
-    /** @test */
+    #[Test]
     public function analytics_handles_boards_with_no_tasks()
     {
         $response = $this->actingAs($this->user)

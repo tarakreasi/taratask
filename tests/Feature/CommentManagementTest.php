@@ -7,6 +7,7 @@ use App\Models\Board;
 use App\Models\Task;
 use App\Models\Comment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CommentManagementTest extends TestCase
@@ -26,7 +27,7 @@ class CommentManagementTest extends TestCase
         $this->task = Task::factory()->create(['board_id' => $this->board->id]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_view_task_comments()
     {
         Comment::factory()->count(3)->create([
@@ -41,7 +42,7 @@ class CommentManagementTest extends TestCase
         $response->assertJsonCount(3);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_create_comment_on_task()
     {
         $response = $this->actingAs($this->user)
@@ -57,7 +58,7 @@ class CommentManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_delete_their_own_comment()
     {
         $comment = Comment::factory()->create([
@@ -74,7 +75,7 @@ class CommentManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_delete_others_comment()
     {
         $otherUser = User::factory()->create();
@@ -92,7 +93,7 @@ class CommentManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function comment_requires_content()
     {
         $response = $this->actingAs($this->user)
@@ -103,7 +104,7 @@ class CommentManagementTest extends TestCase
         $response->assertSessionHasErrors('content');
     }
 
-    /** @test */
+    #[Test]
     public function comments_include_user_information()
     {
         Comment::factory()->create([
@@ -129,7 +130,7 @@ class CommentManagementTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function deleting_task_deletes_associated_comments()
     {
         $comment = Comment::factory()->create([
