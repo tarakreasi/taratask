@@ -104,7 +104,7 @@ class BoardController extends Controller
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string|max:1000',
             'theme_color' => 'sometimes|string|max:7',
-            'wip_limits' => 'nullable|json',
+            'wip_limits' => 'nullable|array',
         ]);
 
         $board->update($validated);

@@ -57,6 +57,8 @@ export default function Kanban({
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showNewBoardInput, setShowNewBoardInput] = useState(false);
     const [newBoardName, setNewBoardName] = useState('');
+    const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
+    const [editingBoardTitle, setEditingBoardTitle] = useState('');
     const [confirmDeleteBoardId, setConfirmDeleteBoardId] = useState<number | null>(null);
     const [showProfileEdit, setShowProfileEdit] = useState(false);
     const [profileName, setProfileName] = useState(auth.user.name);
@@ -175,6 +177,20 @@ export default function Kanban({
         router.delete(`/boards/${boardId}`, {
             onSuccess: () => setConfirmDeleteBoardId(null),
         });
+    };
+
+    const handleRenameBoard = (boardId: number) => {
+        if (!editingBoardTitle.trim()) {
+            setEditingBoardId(null);
+            return;
+        }
+        router.put(
+            `/boards/${boardId}`,
+            { title: editingBoardTitle.trim() },
+            {
+                onSuccess: () => setEditingBoardId(null),
+            }
+        );
     };
 
     const isActiveBoardEmpty = activeBoard && tasks.length === 0;
@@ -420,6 +436,18 @@ export default function Kanban({
                                     {isActive && (
                                         <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                                     )}
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setEditingBoardId(board.id);
+                                            setEditingBoardTitle(board.title);
+                                        }}
+                                        className={`${isActive ? '' : 'ml-auto'} p-1 rounded text-gray-400 opacity-0 group-hover:opacity-100 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all`}
+                                        title="Rename board"
+                                    >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
                                     {isActive &&
                                         isActiveBoardEmpty &&
                                         confirmDeleteBoardId !== board.id && (
@@ -429,13 +457,42 @@ export default function Kanban({
                                                     e.stopPropagation();
                                                     setConfirmDeleteBoardId(board.id);
                                                 }}
-                                                className="ml-auto p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                                className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                                                 title="Delete empty board"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         )}
                                 </Link>
+                                {editingBoardId === board.id && (
+                                    <div className="ml-4 mt-1 p-2 rounded-lg bg-blue-50/70 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 space-y-2">
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            value={editingBoardTitle}
+                                            onChange={(e) => setEditingBoardTitle(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleRenameBoard(board.id);
+                                                if (e.key === 'Escape') setEditingBoardId(null);
+                                            }}
+                                            className="w-full px-2.5 py-1 text-xs rounded border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
+                                        />
+                                        <div className="flex gap-1.5">
+                                            <button
+                                                onClick={() => handleRenameBoard(board.id)}
+                                                className="flex-1 px-2 py-1 text-[11px] font-medium bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+                                            >
+                                                Save
+                                            </button>
+                                            <button
+                                                onClick={() => setEditingBoardId(null)}
+                                                className="px-2 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                                 {confirmDeleteBoardId === board.id && (
                                     <div className="ml-6 mt-1 p-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
                                         <p className="text-xs text-red-600 dark:text-red-400 mb-2">
