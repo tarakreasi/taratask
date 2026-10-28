@@ -12,7 +12,16 @@ class AnalyticsController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $boardId = $request->query('board_id') ?? $user->boards()->first()->id;
+        $requestedBoardId = $request->query('board_id');
+        if ($requestedBoardId) {
+            $board = $user->boards()->find($requestedBoardId);
+            if (!$board) {
+                abort(403);
+            }
+            $boardId = $board->id;
+        } else {
+            $boardId = $user->boards()->first()?->id;
+        }
         
         // Cycle Time Calculation (Average time from in-progress to done in days)
         $tasksWithTimestamps = Task::where('board_id', $boardId)

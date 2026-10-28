@@ -17,6 +17,11 @@ class TagController extends Controller
             'color' => 'required|string|max:7',
         ]);
 
+        $board = Board::findOrFail($validated['board_id']);
+        if ($board->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
         $tag = Tag::create($validated);
 
         return back();
@@ -24,6 +29,10 @@ class TagController extends Controller
 
     public function destroy(Request $request, Tag $tag)
     {
+        if ($tag->board && $tag->board->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
         $tag->delete();
         
         if ($request->wantsJson()) {

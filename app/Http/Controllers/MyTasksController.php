@@ -38,16 +38,18 @@ class MyTasksController extends Controller
             });
         }
         
-        // Apply sorting
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
+        // Apply sorting (whitelisted to prevent SQL injection)
+        $allowedSorts = ['created_at', 'due_date', 'priority', 'title', 'status', 'updated_at'];
+        $requestedSort = (string) $request->get('sort_by', 'created_at');
+        $sortBy = in_array($requestedSort, $allowedSorts, true) ? $requestedSort : 'created_at';
+        $sortOrder = strtolower((string) $request->get('sort_order', 'desc')) === 'asc' ? 'asc' : 'desc';
         
         switch ($sortBy) {
             case 'due_date':
                 $query->orderByRaw('due_date IS NULL, due_date ' . $sortOrder);
                 break;
             case 'priority':
-                $query->orderByRaw("FIELD(priority, 'high', 'medium', 'low')");
+                $query->orderByRaw("CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END " . $sortOrder);
                 break;
             case 'title':
                 $query->orderBy('title', $sortOrder);

@@ -8,13 +8,21 @@ use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
-    public function index(Task $task)
+    public function index(Request $request, Task $task)
     {
+        if ($task->board && $task->board->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
         return $task->comments()->with('user')->get();
     }
 
     public function store(Request $request, Task $task)
     {
+        if ($task->board && $task->board->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'content' => 'required|string',
         ]);

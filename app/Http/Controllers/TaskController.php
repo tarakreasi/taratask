@@ -164,6 +164,10 @@ class TaskController extends Controller
      */
     public function update(Request $request, Task $task)
     {
+        if ($task->board && $task->board->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -375,6 +379,14 @@ class TaskController extends Controller
             ];
 
             $callback = function () use ($tasks) {
+                $sanitizeCsv = function (?string $val): string {
+                    $val = (string) $val;
+                    if ($val !== '' && in_array($val[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+                        return "'" . $val;
+                    }
+                    return $val;
+                };
+
                 $out = fopen('php://output', 'w');
                 fputcsv($out, [
                     'ID',
@@ -400,15 +412,15 @@ class TaskController extends Controller
 
                     fputcsv($out, [
                         $task->id,
-                        $task->board?->title ?? '',
-                        $task->title,
-                        $task->description ?? '',
+                        $sanitizeCsv($task->board?->title ?? ''),
+                        $sanitizeCsv($task->title),
+                        $sanitizeCsv($task->description ?? ''),
                         $task->status,
                         $task->priority,
                         $task->due_date ? $task->due_date->format('Y-m-d') : '',
                         $task->recurrence_interval ?? 'none',
                         $subtasksTotal > 0 ? "{$subtasksDone}/{$subtasksTotal}" : '',
-                        $task->tags->pluck('name')->implode(', '),
+                        $sanitizeCsv($task->tags->pluck('name')->implode(', ')),
                         $task->archived_at ? 'Yes' : 'No',
                         $task->created_at?->toIso8601String() ?? '',
                         $task->completed_at?->toIso8601String() ?? '',
@@ -431,8 +443,12 @@ class TaskController extends Controller
         ]);
     }
 
-    public function activities(Task $task)
+    public function activities(Request $request, Task $task)
     {
+        if ($task->board && $task->board->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
         return response()->json($task->activities()->latest()->get());
     }
 
@@ -441,6 +457,10 @@ class TaskController extends Controller
      */
     public function destroy(Request $request, Task $task)
     {
+        if ($task->board && $task->board->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
         $task->delete();
         if ($request->wantsJson()) {
             return response()->noContent();
