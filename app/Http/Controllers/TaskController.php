@@ -61,6 +61,34 @@ class TaskController extends Controller
     }
 
     /**
+     * Mobile-first Quick Capture / Braindump page (/capture).
+     */
+    public function quickCapture(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->boards()->count() === 0) {
+            $user->boards()->create([
+                'title' => 'Personal',
+                'theme_color' => '#4A90E2',
+            ]);
+        }
+
+        $boards = $user->boards()->get();
+        $recentTasks = Task::whereIn('board_id', $boards->pluck('id'))
+            ->whereNull('archived_at')
+            ->with('board:id,title,theme_color')
+            ->latest()
+            ->limit(6)
+            ->get();
+
+        return Inertia::render('QuickCapture', [
+            'boards' => $boards,
+            'recentTasks' => $recentTasks,
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)

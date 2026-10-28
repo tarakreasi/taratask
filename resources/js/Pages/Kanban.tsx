@@ -23,6 +23,7 @@ import {
     Archive,
     Download,
     Command as CommandIcon,
+    Zap,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import AnalyticsPanel from '@/components/AnalyticsPanel';
@@ -251,6 +252,18 @@ export default function Kanban({
                     </div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                         My Tasks
+                    </span>
+                </Link>
+
+                <Link
+                    href={route('tasks.capture')}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-500/20 dark:border-amber-400/20 transition-all duration-200 group"
+                >
+                    <div className="p-1.5 rounded-lg bg-amber-500/20 group-hover:bg-amber-500/30 transition-colors">
+                        <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                        Quick Braindump
                     </span>
                 </Link>
             </div>

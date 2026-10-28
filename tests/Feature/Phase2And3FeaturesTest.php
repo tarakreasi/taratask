@@ -168,4 +168,18 @@ class Phase2And3FeaturesTest extends TestCase
         $csvRes->assertStatus(200);
         $this->assertStringContainsString('text/csv', $csvRes->headers->get('Content-Type'));
     }
+
+    #[Test]
+    public function user_can_open_quick_capture_page(): void
+    {
+        $response = $this->actingAs($this->user)->get('/capture');
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) =>
+            $page->component('QuickCapture')
+                ->has('boards')
+                ->has('recentTasks')
+        );
+    }
 }
+

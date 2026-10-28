@@ -21,6 +21,7 @@ Route::middleware('auth')->group(function () {
 
     // Kanban & Tasks
     Route::get('/kanban', [TaskController::class, 'index'])->name('kanban.index');
+    Route::get('/capture', [TaskController::class, 'quickCapture'])->name('tasks.capture');
     Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
