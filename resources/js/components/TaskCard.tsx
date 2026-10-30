@@ -26,6 +26,7 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: string | number) => void;
   onArchive?: (id: string | number) => void;
+  onQuickStatusChange?: (task: Task, newStatus: Task['status']) => void;
   isOverlay?: boolean;
 }
 
@@ -95,7 +96,14 @@ const getDueDateStyle = (dueDate: string | null | undefined, status: string) => 
   };
 };
 
-export default function TaskCard({ task, onEdit, onDelete, onArchive, isOverlay }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onEdit,
+  onDelete,
+  onArchive,
+  onQuickStatusChange,
+  isOverlay,
+}: TaskCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -198,7 +206,8 @@ export default function TaskCard({ task, onEdit, onDelete, onArchive, isOverlay 
           </div>
           <button
             onClick={() => onEdit(task)}
-            className="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="p-1 -mr-1 -mt-1 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+            aria-label="Edit task details"
           >
             <MoreHorizontal className="h-4 w-4" />
           </button>
@@ -250,9 +259,14 @@ export default function TaskCard({ task, onEdit, onDelete, onArchive, isOverlay 
           />
         ) : (
           <h4
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                onEdit(task);
+              }
+            }}
             onDoubleClick={() => setIsEditing(true)}
-            className="text-gray-800 dark:text-gray-100 font-medium text-sm mb-2 leading-snug cursor-text hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative z-10"
-            title="Double click to edit"
+            className="text-gray-800 dark:text-gray-100 font-medium text-sm mb-2 leading-snug cursor-pointer md:cursor-text hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative z-10"
+            title="Tap to open on mobile, double-click to inline edit on desktop"
           >
             {task.title}
           </h4>
@@ -285,6 +299,39 @@ export default function TaskCard({ task, onEdit, onDelete, onArchive, isOverlay 
           </div>
         )}
 
+        {/* Mobile Quick Status Switcher (1-tap move without dragging) */}
+        {onQuickStatusChange && !isOverlay && (
+          <div className="flex md:hidden items-center gap-1 mt-2 pt-2 border-t border-gray-100/80 dark:border-slate-700/40 relative z-10 overflow-x-auto">
+            {(
+              [
+                { id: 'todo', label: 'To Do' },
+                { id: 'in-progress', label: 'Doing' },
+                { id: 'in-review', label: 'Review' },
+                { id: 'done', label: 'Done' },
+              ] as const
+            ).map((st) => {
+              const active = task.status === st.id;
+              return (
+                <button
+                  key={st.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!active) onQuickStatusChange(task, st.id);
+                  }}
+                  className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap ${
+                    active
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-gray-100/80 dark:bg-slate-700/60 text-gray-600 dark:text-gray-300 active:scale-95'
+                  }`}
+                >
+                  {st.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50 relative z-10">
           <div className="flex gap-1">
             <Button
@@ -292,7 +339,7 @@ export default function TaskCard({ task, onEdit, onDelete, onArchive, isOverlay 
               size="sm"
               onClick={() => onEdit(task)}
               title="Edit task"
-              className="h-7 w-7 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              className="h-8 w-8 md:h-7 md:w-7 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
             >
               <Edit2 className="h-3.5 w-3.5" />
             </Button>
@@ -302,7 +349,7 @@ export default function TaskCard({ task, onEdit, onDelete, onArchive, isOverlay 
                 size="sm"
                 onClick={() => onArchive(task.id)}
                 title={task.archived_at ? 'Restore from archive' : 'Archive task'}
-                className="h-7 w-7 p-0 hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 md:h-7 md:w-7 p-0 hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
               >
                 {task.archived_at ? (
                   <ArchiveRestore className="h-3.5 w-3.5" />
@@ -316,7 +363,7 @@ export default function TaskCard({ task, onEdit, onDelete, onArchive, isOverlay 
               size="sm"
               onClick={() => onDelete(task.id)}
               title="Delete task"
-              className="h-7 w-7 p-0 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              className="h-8 w-8 md:h-7 md:w-7 p-0 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>

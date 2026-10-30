@@ -12,7 +12,8 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   closestCorners,
@@ -30,9 +31,16 @@ interface SortableTaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: string | number) => void;
   onArchive: (id: string | number) => void;
+  onQuickStatusChange: (task: Task, newStatus: Status) => void;
 }
 
-function SortableTaskCard({ task, onEdit, onDelete, onArchive }: SortableTaskCardProps) {
+function SortableTaskCard({
+  task,
+  onEdit,
+  onDelete,
+  onArchive,
+  onQuickStatusChange,
+}: SortableTaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
   });
@@ -45,7 +53,13 @@ function SortableTaskCard({ task, onEdit, onDelete, onArchive }: SortableTaskCar
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} onEdit={onEdit} onDelete={onDelete} onArchive={onArchive} />
+      <TaskCard
+        task={task}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onArchive={onArchive}
+        onQuickStatusChange={onQuickStatusChange}
+      />
     </div>
   );
 }
@@ -103,6 +117,7 @@ interface KanbanColumnProps {
   handleEditTask: (task: Task) => void;
   handleDeleteTask: (id: string | number) => void;
   handleArchiveTask: (id: string | number) => void;
+  handleQuickStatusChange: (task: Task, newStatus: Status) => void;
   handleArchiveAllDone?: () => void;
   themeColor: string;
   wipLimit?: number;
@@ -119,6 +134,7 @@ function KanbanColumn({
   handleEditTask,
   handleDeleteTask,
   handleArchiveTask,
+  handleQuickStatusChange,
   handleArchiveAllDone,
   themeColor,
   wipLimit,
@@ -134,9 +150,9 @@ function KanbanColumn({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: columns.findIndex((c) => c.id === column.id) * 0.1 }}
+      transition={{ duration: 0.3 }}
       ref={setNodeRef}
-      className={`flex flex-col ${column.bgColor} ${column.darkBgColor} backdrop-blur-xl rounded-2xl p-3 border shadow-sm min-h-[600px] transition-all duration-300 ${
+      className={`flex flex-col ${column.bgColor} ${column.darkBgColor} backdrop-blur-xl rounded-2xl p-3 border shadow-sm min-h-[280px] md:min-h-[600px] transition-all duration-300 ${
         isOver ? 'animate-shake' : 'hover:shadow-md'
       }`}
       style={{
@@ -241,6 +257,7 @@ function KanbanColumn({
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
               onArchive={handleArchiveTask}
+              onQuickStatusChange={handleQuickStatusChange}
             />
           ))}
 
@@ -287,6 +304,7 @@ export default function KanbanBoard({
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [defaultStatus] = useState<Status>('todo');
   const [activeId, setActiveId] = useState<string | number | null>(null);
+  const [mobileActiveColumn, setMobileActiveColumn] = useState<Status | 'all'>('todo');
 
   // Quick Add State
   const [quickAddCol, setQuickAddCol] = useState<Status | null>(null);
@@ -307,12 +325,50 @@ export default function KanbanBoard({
   }, [externalEditTask]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 8,
       },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 8,
+      },
     })
   );
+
+  const handleQuickStatusChange = (task: Task, newStatus: Status) => {
+    if (task.status === newStatus) return;
+
+    setTasks((prev) =>
+      prev.map((t) => (t.id == task.id ? { ...t, status: newStatus } : t))
+    );
+
+    if (newStatus === 'done') {
+      confetti({
+        particleCount: 100,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7'],
+      });
+    }
+
+    axios
+      .put(
+        `/tasks/${task.id}`,
+        { status: newStatus },
+        {
+          headers: { Accept: 'application/json' },
+        }
+      )
+      .then(() => {
+        router.reload({ only: ['tasks'] });
+      })
+      .catch((error) => {
+        console.error('Quick status update failed:', error);
+      });
+  };
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
@@ -477,31 +533,86 @@ export default function KanbanBoard({
 
   return (
     <>
+      {/* Mobile Column Switcher Tabs (< 768px) */}
+      <div className="flex md:hidden items-center gap-1.5 mb-4 p-1.5 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-xs overflow-x-auto no-scrollbar">
+        {columns.map((col) => {
+          const count = getTasksByStatus(col.id).length;
+          const isSelected = mobileActiveColumn === col.id;
+          return (
+            <button
+              key={col.id}
+              type="button"
+              onClick={() => setMobileActiveColumn(col.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                isSelected
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: col.color }}
+              />
+              <span>{col.id === 'in-progress' ? 'Doing' : col.id === 'in-review' ? 'Review' : col.title}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                  isSelected
+                    ? 'bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900'
+                    : 'bg-gray-200/70 dark:bg-slate-800 text-gray-600 dark:text-gray-400'
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setMobileActiveColumn('all')}
+          className={`py-2 px-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+            mobileActiveColumn === 'all'
+              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          All
+        </button>
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {columns.map((column) => (
-            <KanbanColumn
-              key={column.id}
-              column={column}
-              tasks={getTasksByStatus(column.id)}
-              quickAddCol={quickAddCol}
-              setQuickAddCol={setQuickAddCol}
-              quickAddText={quickAddText}
-              setQuickAddText={setQuickAddText}
-              handleQuickAdd={handleQuickAdd}
-              handleEditTask={handleEditTask}
-              handleDeleteTask={handleDeleteTask}
-              handleArchiveTask={handleArchiveTask}
-              handleArchiveAllDone={handleArchiveAllDone}
-              themeColor={themeColor}
-              wipLimit={wipLimits[column.id]}
-            />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+          {columns.map((column) => {
+            const isHiddenOnMobile =
+              mobileActiveColumn !== 'all' && mobileActiveColumn !== column.id;
+            return (
+              <div
+                key={column.id}
+                className={isHiddenOnMobile ? 'hidden md:block' : 'block'}
+              >
+                <KanbanColumn
+                  column={column}
+                  tasks={getTasksByStatus(column.id)}
+                  quickAddCol={quickAddCol}
+                  setQuickAddCol={setQuickAddCol}
+                  quickAddText={quickAddText}
+                  setQuickAddText={setQuickAddText}
+                  handleQuickAdd={handleQuickAdd}
+                  handleEditTask={handleEditTask}
+                  handleDeleteTask={handleDeleteTask}
+                  handleArchiveTask={handleArchiveTask}
+                  handleQuickStatusChange={handleQuickStatusChange}
+                  handleArchiveAllDone={handleArchiveAllDone}
+                  themeColor={themeColor}
+                  wipLimit={wipLimits[column.id]}
+                />
+              </div>
+            );
+          })}
         </div>
 
         <DragOverlay>

@@ -443,7 +443,7 @@ export default function Kanban({
                                             setEditingBoardId(board.id);
                                             setEditingBoardTitle(board.title);
                                         }}
-                                        className={`${isActive ? '' : 'ml-auto'} p-1 rounded text-gray-400 opacity-0 group-hover:opacity-100 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all`}
+                                        className={`${isActive ? '' : 'ml-auto'} p-1.5 md:p-1 rounded text-gray-400 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all`}
                                         title="Rename board"
                                     >
                                         <Edit2 className="w-3.5 h-3.5" />
@@ -674,13 +674,22 @@ export default function Kanban({
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-1.5 md:gap-2">
+                            <div className="flex items-center gap-1 md:gap-2">
+                                {/* Mobile Search Trigger */}
+                                <button
+                                    onClick={() => setCommandOpen(true)}
+                                    className="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
+                                    title="Search tasks across all boards"
+                                >
+                                    <Search className="w-5 h-5" />
+                                </button>
+
                                 {activeBoard && (
                                     <>
                                         {/* Toggle Show Archived */}
                                         <button
                                             onClick={toggleShowArchived}
-                                            className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                                            className={`flex items-center gap-1.5 px-2 md:px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
                                                 showArchived
                                                     ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
                                                     : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-slate-800/50'
@@ -697,7 +706,7 @@ export default function Kanban({
                                         </button>
 
                                         {/* Export Dropdown */}
-                                        <div className="relative">
+                                        <div className="relative hidden sm:block">
                                             <button
                                                 onClick={() => setShowExportMenu(!showExportMenu)}
                                                 className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
@@ -742,7 +751,7 @@ export default function Kanban({
                                         </Link>
                                         <button
                                             onClick={() => setShowAnalytics(true)}
-                                            className="p-2 text-gray-400 hover:text-blue-500 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
+                                            className="hidden sm:inline-flex p-2 text-gray-400 hover:text-blue-500 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
                                             title="Board Analytics"
                                         >
                                             <BarChart3 className="w-5 h-5" />
@@ -751,7 +760,7 @@ export default function Kanban({
                                 )}
                                 <button
                                     onClick={triggerNewTask}
-                                    className="flex items-center justify-center gap-2 text-white transition-all px-3 md:px-4 py-2 rounded-lg font-medium text-sm shadow-lg hover:shadow-xl hover:scale-105"
+                                    className="hidden sm:flex items-center justify-center gap-2 text-white transition-all px-3 md:px-4 py-2 rounded-lg font-medium text-sm shadow-lg hover:shadow-xl hover:scale-105"
                                     style={{ backgroundColor: themeColor }}
                                 >
                                     <Plus className="h-4 w-4" />
@@ -762,7 +771,7 @@ export default function Kanban({
                     </div>
                 </header>
 
-                <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 md:px-8 py-6 md:py-8 overflow-x-auto">
+                <main className="flex-1 max-w-[1700px] w-full mx-auto px-3 sm:px-4 md:px-8 py-4 md:py-8 pb-24 md:pb-8 overflow-x-hidden">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeBoard?.id}
@@ -864,9 +873,52 @@ export default function Kanban({
                     </DialogContent>
                 </Dialog>
 
-                <footer className="py-4 text-center text-xs text-gray-400 dark:text-gray-600 border-t border-gray-100 dark:border-white/5 bg-white/30 dark:bg-slate-900/30 backdrop-blur-sm">
+                <footer className="hidden md:block py-4 text-center text-xs text-gray-400 dark:text-gray-600 border-t border-gray-100 dark:border-white/5 bg-white/30 dark:bg-slate-900/30 backdrop-blur-sm">
                     <p>© {new Date().getFullYear()} Crayon Board • Made with ❤️</p>
                 </footer>
+
+                {/* Mobile Bottom Navigation Bar (< 768px) */}
+                <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 dark:bg-slate-900/95 backdrop-blur-xl border-t border-gray-200/80 dark:border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+                    <button
+                        type="button"
+                        onClick={() => setSidebarOpen(true)}
+                        className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
+                    >
+                        <LayoutGrid className="w-5 h-5" />
+                        <span className="text-[10px] font-medium mt-0.5">Boards</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setCommandOpen(true)}
+                        className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
+                    >
+                        <Search className="w-5 h-5" />
+                        <span className="text-[10px] font-medium mt-0.5">Search</span>
+                    </button>
+                    <Link
+                        href={route('tasks.capture')}
+                        className="flex flex-col items-center justify-center -mt-5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 active:scale-95 transition-all"
+                    >
+                        <Zap className="w-5 h-5" />
+                        <span className="text-[10px] font-bold mt-0.5">Capture</span>
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={() => setShowAnalytics(true)}
+                        className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
+                    >
+                        <BarChart3 className="w-5 h-5" />
+                        <span className="text-[10px] font-medium mt-0.5">Stats</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={triggerNewTask}
+                        className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
+                    >
+                        <PlusCircle className="w-5 h-5" style={{ color: themeColor }} />
+                        <span className="text-[10px] font-medium mt-0.5">New Task</span>
+                    </button>
+                </nav>
             </div>
         </div>
     );

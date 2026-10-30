@@ -315,7 +315,7 @@ export default function TaskModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[540px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.2)]">
+      <DialogContent className="w-[95vw] sm:max-w-[540px] max-h-[92dvh] p-4 sm:p-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.2)]">
         <DialogHeader>
           <div className="flex items-center justify-between pr-6">
             <DialogTitle className="text-2xl text-gray-800 dark:text-gray-100">
