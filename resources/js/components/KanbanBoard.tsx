@@ -148,11 +148,11 @@ function KanbanColumn({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       ref={setNodeRef}
-      className={`flex flex-col ${column.bgColor} ${column.darkBgColor} backdrop-blur-xl rounded-2xl p-3 border shadow-sm min-h-[280px] md:min-h-[600px] transition-all duration-300 ${
+      className={`flex flex-col ${column.bgColor} ${column.darkBgColor} backdrop-blur-xl rounded-xl md:rounded-2xl p-2 sm:p-2.5 md:p-3 border shadow-xs min-h-[200px] md:min-h-[600px] transition-all duration-300 ${
         isOver ? 'animate-shake' : 'hover:shadow-md'
       }`}
       style={{
@@ -161,14 +161,14 @@ function KanbanColumn({
         transform: isOver ? 'scale(1.02)' : 'scale(1)',
       }}
     >
-      <div className="flex items-center justify-between px-2 py-3 mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: column.color }} />
-          <h2 className="text-sm font-semibold" style={{ color: column.color }}>
+      <div className="flex items-center justify-between px-1.5 py-1.5 md:py-2 mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full" style={{ backgroundColor: column.color }} />
+          <h2 className="text-xs md:text-sm font-semibold" style={{ color: column.color }}>
             {column.title}
           </h2>
           <span
-            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+            className={`text-[10px] md:text-xs px-1.5 py-0.2 md:py-0.5 rounded-full font-medium ${
               wipLimit && tasks.length > wipLimit
                 ? 'bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400 animate-pulse'
                 : column.badgeColor
@@ -188,10 +188,10 @@ function KanbanColumn({
               variant="ghost"
               onClick={handleArchiveAllDone}
               title="Archive all completed tasks to keep board clean"
-              className="h-7 px-2 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 rounded-lg flex items-center gap-1"
+              className="h-6 px-1.5 text-[10px] md:text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 rounded-lg flex items-center gap-1"
             >
-              <Archive className="h-3.5 w-3.5" />
-              Archive ({unarchivedDoneCount})
+              <Archive className="h-3 w-3" />
+              <span className="hidden sm:inline">Archive</span> ({unarchivedDoneCount})
             </Button>
           )}
           <Button
@@ -203,23 +203,23 @@ function KanbanColumn({
                 setQuickAddCol(column.id);
               }
             }}
-            className="h-7 w-7 p-0 rounded-lg transition-colors"
+            className="h-6 w-6 md:h-7 md:w-7 p-0 rounded-lg transition-colors"
             style={{
               backgroundColor: 'transparent',
               color: column.color,
-              opacity: 0.5,
+              opacity: 0.6,
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.opacity = '1';
               e.currentTarget.style.backgroundColor = column.color + '15';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.5';
+              e.currentTarget.style.opacity = '0.6';
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
             <Plus
-              className={`h-4 w-4 transition-transform ${
+              className={`h-3.5 w-3.5 md:h-4 md:w-4 transition-transform ${
                 quickAddCol === column.id ? 'rotate-45' : ''
               }`}
             />
@@ -228,12 +228,12 @@ function KanbanColumn({
       </div>
 
       {quickAddCol === column.id && (
-        <div className="mb-3 px-1">
+        <div className="mb-2 px-0.5">
           <input
             autoFocus
             type="text"
             placeholder="Type task title..."
-            className="w-full px-3 py-2 text-sm rounded-lg border-0 ring-1 ring-inset ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-blue-500 shadow-sm bg-white dark:bg-slate-700 dark:text-white"
+            className="w-full px-2.5 py-1.5 text-xs md:text-sm rounded-lg border-0 ring-1 ring-inset ring-gray-200 dark:ring-gray-700 focus:ring-2 focus:ring-blue-500 shadow-xs bg-white dark:bg-slate-700 dark:text-white"
             value={quickAddText}
             onChange={(e) => setQuickAddText(e.target.value)}
             onKeyDown={(e) => {
@@ -249,7 +249,7 @@ function KanbanColumn({
         items={tasks.map((task) => task.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex-1 pr-1 space-y-3">
+        <div className="flex-1 space-y-1.5 sm:space-y-2 md:space-y-3">
           {tasks.map((task) => (
             <SortableTaskCard
               key={task.id}
@@ -262,9 +262,9 @@ function KanbanColumn({
           ))}
 
           {tasks.length === 0 && (
-            <div className="text-center py-12 text-gray-400">
-              <p className="text-sm">No tasks yet</p>
-              <p className="text-xs mt-1">Click + to add one</p>
+            <div className="text-center py-6 md:py-12 text-gray-400">
+              <p className="text-xs md:text-sm">No tasks</p>
+              <p className="text-[10px] md:text-xs mt-0.5 text-gray-400/80">Tap + to add</p>
             </div>
           )}
         </div>
@@ -534,7 +534,7 @@ export default function KanbanBoard({
   return (
     <>
       {/* Mobile Column Switcher Tabs (< 768px) */}
-      <div className="flex md:hidden items-center gap-1.5 mb-4 p-1.5 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-xs overflow-x-auto no-scrollbar">
+      <div className="flex md:hidden items-center gap-1 mb-2.5 p-1 rounded-xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-xs overflow-x-auto no-scrollbar">
         {columns.map((col) => {
           const count = getTasksByStatus(col.id).length;
           const isSelected = mobileActiveColumn === col.id;
@@ -543,19 +543,19 @@ export default function KanbanBoard({
               key={col.id}
               type="button"
               onClick={() => setMobileActiveColumn(col.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${
                 isSelected
                   ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/60 dark:hover:bg-slate-800/60'
               }`}
             >
               <span
-                className="w-2 h-2 rounded-full shrink-0"
+                className="w-1.5 h-1.5 rounded-full shrink-0"
                 style={{ backgroundColor: col.color }}
               />
               <span>{col.id === 'in-progress' ? 'Doing' : col.id === 'in-review' ? 'Review' : col.title}</span>
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                className={`text-[9px] px-1 py-0.2 rounded-full ${
                   isSelected
                     ? 'bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900'
                     : 'bg-gray-200/70 dark:bg-slate-800 text-gray-600 dark:text-gray-400'
@@ -569,7 +569,7 @@ export default function KanbanBoard({
         <button
           type="button"
           onClick={() => setMobileActiveColumn('all')}
-          className={`py-2 px-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+          className={`py-1 px-2 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${
             mobileActiveColumn === 'all'
               ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
               : 'text-gray-500 dark:text-gray-400'

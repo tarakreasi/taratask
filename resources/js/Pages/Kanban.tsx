@@ -607,26 +607,26 @@ export default function Kanban({
 
             <div className="flex-1 flex flex-col min-h-screen">
                 <header className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-b border-white/50 dark:border-white/5 sticky top-0 z-30 shadow-lg shadow-indigo-100/50 dark:shadow-black/20 transition-colors duration-300">
-                    <div className="max-w-[1700px] mx-auto px-4 md:px-8 py-4 md:py-5">
-                        <div className="flex items-center justify-between gap-4">
+                    <div className="max-w-[1700px] mx-auto px-3 sm:px-4 md:px-8 py-2.5 md:py-5">
+                        <div className="flex items-center justify-between gap-2 md:gap-4">
                             <button
                                 onClick={() => setSidebarOpen(true)}
-                                className="md:hidden p-2 -ml-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800"
+                                className="md:hidden p-1.5 -ml-1 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800"
                             >
-                                <Menu className="w-6 h-6" />
+                                <Menu className="w-5 h-5" />
                             </button>
 
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
+                                <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
                                     <span
                                         className="w-2 h-2 rounded-full"
                                         style={{ backgroundColor: themeColor }}
                                     />
-                                    <h2 className="text-gray-900 dark:text-white text-lg md:text-xl font-bold truncate">
+                                    <h2 className="text-gray-900 dark:text-white text-base md:text-xl font-bold truncate">
                                         {activeBoard?.title || 'Kanban Board'}
                                     </h2>
                                 </div>
-                                <p className="text-xs text-gray-400">{boards.length} Projects</p>
+                                <p className="text-[11px] md:text-xs text-gray-400">{boards.length} Projects</p>
                             </div>
 
                             {/* Center Section: Filter & Global Search (Ctrl+K) */}
@@ -678,10 +678,10 @@ export default function Kanban({
                                 {/* Mobile Search Trigger */}
                                 <button
                                     onClick={() => setCommandOpen(true)}
-                                    className="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
+                                    className="lg:hidden p-1.5 md:p-2 text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
                                     title="Search tasks across all boards"
                                 >
-                                    <Search className="w-5 h-5" />
+                                    <Search className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
 
                                 {activeBoard && (
@@ -689,14 +689,14 @@ export default function Kanban({
                                         {/* Toggle Show Archived */}
                                         <button
                                             onClick={toggleShowArchived}
-                                            className={`flex items-center gap-1.5 px-2 md:px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                                            className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-1 md:py-2 rounded-lg text-xs font-medium transition-all ${
                                                 showArchived
                                                     ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
                                                     : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-slate-800/50'
                                             }`}
                                             title="Toggle archived tasks visibility"
                                         >
-                                            <Archive className="w-4 h-4" />
+                                            <Archive className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                             <span className="hidden xl:inline">Archived</span>
                                             {archivedCount > 0 && (
                                                 <span className="px-1.5 py-0.2 rounded-full bg-gray-200/80 dark:bg-slate-700 text-[10px]">
@@ -744,10 +744,10 @@ export default function Kanban({
 
                                         <Link
                                             href={route('boards.settings', activeBoard.id)}
-                                            className="p-2 text-gray-400 hover:text-purple-500 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
+                                            className="p-1.5 md:p-2 text-gray-400 hover:text-purple-500 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-all"
                                             title="Board Settings"
                                         >
-                                            <Settings className="w-5 h-5" />
+                                            <Settings className="w-4 h-4 md:w-5 md:h-5" />
                                         </Link>
                                         <button
                                             onClick={() => setShowAnalytics(true)}
@@ -771,7 +771,7 @@ export default function Kanban({
                     </div>
                 </header>
 
-                <main className="flex-1 max-w-[1700px] w-full mx-auto px-3 sm:px-4 md:px-8 py-4 md:py-8 pb-24 md:pb-8 overflow-x-hidden">
+                <main className="flex-1 max-w-[1700px] w-full mx-auto px-2 sm:px-4 md:px-8 py-2 md:py-8 pb-20 md:pb-8 overflow-x-hidden">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeBoard?.id}
@@ -878,45 +878,45 @@ export default function Kanban({
                 </footer>
 
                 {/* Mobile Bottom Navigation Bar (< 768px) */}
-                <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 dark:bg-slate-900/95 backdrop-blur-xl border-t border-gray-200/80 dark:border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+                <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 dark:bg-slate-900/95 backdrop-blur-xl border-t border-gray-200/80 dark:border-slate-800 px-1.5 py-1 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
                     <button
                         type="button"
                         onClick={() => setSidebarOpen(true)}
-                        className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
+                        className="flex flex-col items-center justify-center py-0.5 px-2.5 rounded-lg text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
                     >
-                        <LayoutGrid className="w-5 h-5" />
-                        <span className="text-[10px] font-medium mt-0.5">Boards</span>
+                        <LayoutGrid className="w-4 h-4" />
+                        <span className="text-[9px] font-medium mt-0.5">Boards</span>
                     </button>
                     <button
                         type="button"
                         onClick={() => setCommandOpen(true)}
-                        className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
+                        className="flex flex-col items-center justify-center py-0.5 px-2.5 rounded-lg text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
                     >
-                        <Search className="w-5 h-5" />
-                        <span className="text-[10px] font-medium mt-0.5">Search</span>
+                        <Search className="w-4 h-4" />
+                        <span className="text-[9px] font-medium mt-0.5">Search</span>
                     </button>
                     <Link
                         href={route('tasks.capture')}
-                        className="flex flex-col items-center justify-center -mt-5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 active:scale-95 transition-all"
+                        className="flex flex-col items-center justify-center -mt-4 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 active:scale-95 transition-all"
                     >
-                        <Zap className="w-5 h-5" />
-                        <span className="text-[10px] font-bold mt-0.5">Capture</span>
+                        <Zap className="w-4 h-4" />
+                        <span className="text-[9px] font-bold mt-0.5">Capture</span>
                     </Link>
                     <button
                         type="button"
                         onClick={() => setShowAnalytics(true)}
-                        className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
+                        className="flex flex-col items-center justify-center py-0.5 px-2.5 rounded-lg text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
                     >
-                        <BarChart3 className="w-5 h-5" />
-                        <span className="text-[10px] font-medium mt-0.5">Stats</span>
+                        <BarChart3 className="w-4 h-4" />
+                        <span className="text-[9px] font-medium mt-0.5">Stats</span>
                     </button>
                     <button
                         type="button"
                         onClick={triggerNewTask}
-                        className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
+                        className="flex flex-col items-center justify-center py-0.5 px-2.5 rounded-lg text-gray-600 dark:text-gray-400 active:scale-95 transition-all"
                     >
-                        <PlusCircle className="w-5 h-5" style={{ color: themeColor }} />
-                        <span className="text-[10px] font-medium mt-0.5">New Task</span>
+                        <PlusCircle className="w-4 h-4" style={{ color: themeColor }} />
+                        <span className="text-[9px] font-medium mt-0.5">New Task</span>
                     </button>
                 </nav>
             </div>

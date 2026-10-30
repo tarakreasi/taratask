@@ -315,15 +315,15 @@ export default function TaskModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[95vw] sm:max-w-[540px] max-h-[92dvh] p-4 sm:p-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.2)]">
+      <DialogContent className="w-[95vw] sm:max-w-[540px] max-h-[92dvh] p-3.5 sm:p-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-xl sm:rounded-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.2)]">
         <DialogHeader>
           <div className="flex items-center justify-between pr-6">
-            <DialogTitle className="text-2xl text-gray-800 dark:text-gray-100">
+            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">
               {task ? 'Edit Task' : 'Add New Task'}
             </DialogTitle>
             {task && autosaveStatus !== 'idle' && (
               <span
-                className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full transition-all ${
+                className={`inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-medium px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full transition-all ${
                   autosaveStatus === 'saving'
                     ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300'
                     : autosaveStatus === 'saved'
@@ -347,7 +347,7 @@ export default function TaskModal({
               </span>
             )}
           </div>
-          <DialogDescription className="text-gray-600 dark:text-gray-400">
+          <DialogDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             {task
               ? 'Changes are saved automatically as you edit.'
               : 'Create a new task for your board (draft is saved locally).'}
@@ -356,20 +356,20 @@ export default function TaskModal({
 
         <div className="flex-1 overflow-y-auto max-h-[70vh] pr-1">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4 bg-gray-100 dark:bg-slate-800 p-1">
-              <TabsTrigger value="details" className="dark:data-[state=active]:bg-slate-700">
+            <TabsList className="grid w-full grid-cols-3 mb-3 bg-gray-100 dark:bg-slate-800 p-0.5 sm:p-1 h-8 sm:h-10 text-xs sm:text-sm">
+              <TabsTrigger value="details" className="text-xs sm:text-sm py-1 dark:data-[state=active]:bg-slate-700">
                 Details
               </TabsTrigger>
-              <TabsTrigger value="comments" className="dark:data-[state=active]:bg-slate-700">
-                <MessageSquare className="w-4 h-4 mr-2" />
+              <TabsTrigger value="comments" className="text-xs sm:text-sm py-1 dark:data-[state=active]:bg-slate-700">
+                <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Comments
               </TabsTrigger>
-              <TabsTrigger value="activity" className="dark:data-[state=active]:bg-slate-700">
+              <TabsTrigger value="activity" className="text-xs sm:text-sm py-1 dark:data-[state=active]:bg-slate-700">
                 Activity
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="details" className="space-y-4">
+            <TabsContent value="details" className="space-y-3 sm:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="title" className="text-gray-700 dark:text-gray-300 font-medium">
                   Title *

@@ -161,36 +161,36 @@ export default function QuickCapture({
             <Head title="Quick Braindump | taraTask" />
 
             {/* Compact Mobile-First Header */}
-            <header className="px-4 py-3 flex items-center justify-between border-b border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl sticky top-0 z-20">
+            <header className="px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between border-b border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl sticky top-0 z-20">
                 <Link
                     href={route('kanban.index', { board_id: boardId })}
-                    className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-2.5 py-1.5 rounded-lg hover:bg-white/60 dark:hover:bg-slate-800 transition-all"
+                    className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-2 py-1 rounded-lg hover:bg-white/60 dark:hover:bg-slate-800 transition-all"
                 >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Ke Papan Kanban</span>
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Ke Papan</span>
                 </Link>
 
-                <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm font-bold tracking-tight">Quick Braindump</span>
+                <div className="flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-xs sm:text-sm font-bold tracking-tight">Quick Braindump</span>
                 </div>
 
                 <ThemeToggle />
             </header>
 
             {/* Main Capture Card — Calm, Zero-Pressure UI */}
-            <main className="flex-1 w-full max-w-lg mx-auto px-4 py-6 flex flex-col gap-5">
+            <main className="flex-1 w-full max-w-lg mx-auto px-3 sm:px-4 py-3 sm:py-6 flex flex-col gap-3.5 sm:gap-5">
                 <form
                     onSubmit={handleSubmit}
-                    className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-2xl p-5 border border-white/60 dark:border-white/10 shadow-xl space-y-4"
+                    className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-3.5 sm:p-5 border border-white/60 dark:border-white/10 shadow-lg sm:shadow-xl space-y-3 sm:space-y-4"
                 >
                     {/* Target Board Selector Pills */}
                     <div>
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5 mb-2">
-                            <FolderKanban className="w-3.5 h-3.5" />
+                        <label className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5 mb-1.5 sm:mb-2">
+                            <FolderKanban className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             Taruh di Board
                         </label>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1 sm:gap-1.5">
                             {boards.map((b) => {
                                 const active = b.id === boardId;
                                 return (
@@ -198,15 +198,15 @@ export default function QuickCapture({
                                         key={b.id}
                                         type="button"
                                         onClick={() => handleBoardChange(b.id)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                                             active
-                                                ? 'text-white shadow-md scale-[1.02]'
+                                                ? 'text-white shadow-sm scale-[1.02]'
                                                 : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
                                         }`}
                                         style={active ? { backgroundColor: b.theme_color } : {}}
                                     >
                                         <span
-                                            className="w-2 h-2 rounded-full"
+                                            className="w-1.5 h-1.5 rounded-full"
                                             style={{
                                                 backgroundColor: active ? '#fff' : b.theme_color,
                                             }}
@@ -226,7 +226,7 @@ export default function QuickCapture({
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Apa yang sedang terlintas di pikiran Anda? (Tekan Enter)"
-                            className="w-full px-4 py-3.5 text-base font-medium rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                            className="w-full px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                         />
                     </div>
 
@@ -237,7 +237,7 @@ export default function QuickCapture({
                             onChange={(e) => setNotes(e.target.value)}
                             rows={3}
                             placeholder="Detail singkat bila perlu (opsional). Awali baris dengan '- ' jika ingin jadi daftar rincian..."
-                            className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/70 dark:bg-slate-800/70 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg sm:rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/70 dark:bg-slate-800/70 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
                             onKeyDown={(e) => {
                                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                                     e.preventDefault();
@@ -251,7 +251,7 @@ export default function QuickCapture({
                     <button
                         type="submit"
                         disabled={!title.trim() || isSubmitting}
-                        className="w-full py-3.5 px-4 rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+                        className="w-full py-2.5 sm:py-3.5 px-4 rounded-lg sm:rounded-xl text-white font-semibold text-xs sm:text-sm shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
                         style={{ backgroundColor: themeColor }}
                     >
                         <Send className="w-4 h-4" />
